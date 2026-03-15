@@ -8,6 +8,7 @@ import { fmt } from '../utils';
 export default function Formulas({ data, formulasWithCosts, loadData, showToast, searchQuery, user }) {
   const [filter, setFilter] = useState('all');
   const [createModal, setCreateModal] = useState(false);
+  const [editFormulaId, setEditFormulaId] = useState(null);
   const [detailId, setDetailId] = useState(null);
   const [presModal, setPresModal] = useState(null);
   const [editPresId, setEditPresId] = useState(null);
@@ -57,6 +58,54 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
       setCreateModal(false);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
     finally { setSaving(false); }
+  };
+
+  // ── Edit Formula ──
+  const openEditFormula = () => {
+    if (!detailFormula) return;
+    setForm({
+      name: detailFormula.name,
+      category: detailFormula.category,
+      baseAmount: detailFormula.base_amount || detailFormula.yield_amount || 100,
+      baseUnit: detailFormula.base_unit || detailFormula.yield_unit || 'ml',
+      yieldAmount: detailFormula.yield_amount || 100,
+      yieldUnit: detailFormula.yield_unit || 'ml',
+      salePrice: detailFormula.sale_price || 0,
+      ingredients: (detailFormula.ingredients || []).map(ing => ({
+        materialId: ing.material_id,
+        amount: ing.amount,
+      })),
+    });
+    setEditFormulaId(detailFormula.id);
+    setDetailId(null);
+  };
+
+  const saveEditFormula = async () => {
+    if (!form.name || !form.category || form.ingredients.some(i => !i.materialId)) return;
+    setSaving(true);
+    try {
+      await db.formulas.update(editFormulaId, form, form.ingredients, user);
+      await loadData();
+      showToast('Fórmula actualizada');
+      setEditFormulaId(null);
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    finally { setSaving(false); }
+  };
+
+  const deleteFormula = async () => {
+    if (!detailFormula) return;
+    const presCount = (data.presentations || []).filter(p => p.formula_id === detailFormula.id).length;
+    if (presCount > 0) {
+      showToast(`No se puede eliminar: tiene ${presCount} presentación(es). Elimínalas primero.`, 'error');
+      return;
+    }
+    if (!confirm(`¿Eliminar la fórmula "${detailFormula.name}"?`)) return;
+    try {
+      await db.formulas.delete(detailFormula.id, detailFormula.name, user);
+      await loadData();
+      showToast('Fórmula eliminada');
+      setDetailId(null);
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
   // ── Presentations ──
@@ -195,7 +244,11 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
       {detailFormula && (
         <Modal title={detailFormula.name} onClose={() => setDetailId(null)} wide>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <CategoryTag category={detailFormula.category} categories={data.categories || []} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <CategoryTag category={detailFormula.category} categories={data.categories || []} />
+              <Button variant="ghost" size="sm" onClick={openEditFormula}>✎ Editar</Button>
+              <Button variant="danger" size="sm" onClick={deleteFormula}>🗑️ Eliminar</Button>
+            </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>COSTO BASE ({detailFormula.base_amount || detailFormula.yield_amount}{detailFormula.base_unit || detailFormula.yield_unit})</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--warning)' }}>{fmt(detailFormula._productionCost)}</div>
@@ -388,6 +441,37 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
             placeholder={"1. Pesar los ingredientes\n2. Mezclar la base acuosa a 70°C\n3. Agregar activos cuando baje a 40°C\n4. Mezclar por 5 minutos\n5. Envasar y etiquetar"}
           />
           <ModalActions onCancel={() => setProcModal(null)} onConfirm={saveProcedure} confirmLabel={saving ? 'Guardando...' : 'Guardar'} confirmDisabled={saving} />
+        </Modal>
+      )}
+
+      {/* ═══ EDIT FORMULA MODAL ═══ */}
+      {editFormulaId && (
+        <Modal title="Editar Fórmula" onClose={() => setEditFormulaId(null)} wide>
+          <Input label="Nombre" value={form.name} onChange={v => setForm({ ...form, name: v })} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <Select label="Categoría" value={form.category} options={(data.categories || []).map(c => ({ value: c.slug, label: c.icon + ' ' + c.name }))} onChange={v => setForm({ ...form, category: v })} placeholder="Seleccionar..." />
+            <Input label="Cantidad base" type="number" value={form.baseAmount} onChange={v => { const val = +v; setForm({ ...form, baseAmount: val, yieldAmount: val }); }} />
+            <Select label="Unidad" value={form.baseUnit} options={UNITS} onChange={v => setForm({ ...form, baseUnit: v, yieldUnit: v })} />
+          </div>
+          <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: 8, background: 'var(--accent-bg)', border: '1px solid rgba(108,114,255,0.15)', fontSize: 12, color: 'var(--accent)' }}>
+            💡 Cantidades de ingredientes para <strong>{form.baseAmount || '?'}{form.baseUnit}</strong> de producto
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, display: 'block', marginBottom: 8 }}>Ingredientes</label>
+            {form.ingredients.map((ing, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: 8, marginBottom: 8 }}>
+                <Select value={ing.materialId} options={materiasPrimas.map(m => ({ value: m.id, label: `${m.name} (${m.unit})` }))} onChange={v => updateIng(i, 'materialId', v)} placeholder="Materia prima..." />
+                <Input type="number" value={ing.amount} onChange={v => updateIng(i, 'amount', v)} step="0.01" placeholder="Cant." />
+                <Button variant="danger" size="sm" onClick={() => removeIng(i)}>✕</Button>
+              </div>
+            ))}
+            <Button variant="ghost" size="sm" onClick={addIng}>+ Ingrediente</Button>
+          </div>
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border)', fontSize: 13 }}>
+            Costo base ({form.baseAmount}{form.baseUnit}): <strong style={{ color: 'var(--warning)' }}>{fmt(baseCost)}</strong>
+            {form.baseAmount > 0 && <span style={{ marginLeft: 12 }}>por {form.baseUnit}: <strong>{fmt(baseCost / form.baseAmount)}</strong></span>}
+          </div>
+          <ModalActions onCancel={() => setEditFormulaId(null)} onConfirm={saveEditFormula} confirmLabel={saving ? 'Guardando...' : 'Actualizar'} confirmDisabled={saving} />
         </Modal>
       )}
     </div>

@@ -134,6 +134,25 @@ export const formulas = {
     if (error) throw error;
     await activityLog.log(user, 'eliminar', 'formula', id, name);
   },
+  update: async (id, formula, ingredients, user) => {
+    const { data: f, error: fErr } = await supabase.from('formulas').update({
+      name: formula.name, category: formula.category,
+      yield_amount: formula.baseAmount, yield_unit: formula.baseUnit,
+      base_amount: formula.baseAmount, base_unit: formula.baseUnit,
+      sale_price: formula.salePrice || 0,
+    }).eq('id', id).select().single();
+    if (fErr) throw fErr;
+    // Replace ingredients: delete old, insert new
+    await supabase.from('formula_ingredients').delete().eq('formula_id', id);
+    if (ingredients.length > 0) {
+      const { error: iErr } = await supabase.from('formula_ingredients').insert(
+        ingredients.map(i => ({ formula_id: id, material_id: i.materialId, amount: i.amount }))
+      );
+      if (iErr) throw iErr;
+    }
+    await activityLog.log(user, 'editar', 'formula', f.id, f.name, { ingredients: ingredients.length });
+    return f;
+  },
 };
 
 // ── Products ──
