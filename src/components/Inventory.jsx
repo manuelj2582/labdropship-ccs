@@ -17,11 +17,16 @@ export default function Inventory({ data, loadData, showToast, searchQuery }) {
     if (!form.name) return;
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        cost: form.cost || 0,
+        supplier_id: form.supplier_id || null,
+      };
       if (editId) {
-        await db.rawMaterials.update(editId, form, user);
+        await db.rawMaterials.update(editId, payload, user);
         showToast('Material actualizado');
       } else {
-        await db.rawMaterials.create(form, user);
+        await db.rawMaterials.create(payload, user);
         showToast('Material agregado');
       }
       await loadData();
