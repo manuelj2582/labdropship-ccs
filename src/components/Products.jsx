@@ -56,9 +56,9 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
               <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 56, opacity: 0.05 }}>{cat?.icon}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <CategoryTag category={p.category} categories={data.categories || []} />
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>✎</Button>
-                  <Button variant="danger" size="sm" onClick={() => remove(p.id, p.name)}>✕</Button>
+                <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 2 }}>
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>✎</Button>
+                  <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); remove(p.id, p.name); }}>✕</Button>
                 </div>
               </div>
               <h4 style={{ margin: '10px 0 6px', fontSize: 14, fontWeight: 700 }}>{p.name}</h4>

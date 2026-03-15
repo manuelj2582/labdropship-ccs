@@ -53,10 +53,13 @@ export default function Production({ data, formulasWithCosts, loadData, showToas
         })}
       </div>
       <Card title="Stock Productos Terminados">
+        {data.products.filter(p => p.stock > 0).length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-dim)', fontSize: 13 }}>No hay productos con stock</div>
+        ) : (
         <table style={tableStyle}>
           <thead><tr>{['Producto','Categoría','Stock','Precio Mayor','Valor'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
           <tbody>
-            {data.products.map(p => (
+            {data.products.filter(p => p.stock > 0).map(p => (
               <tr key={p.id}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{p.name}</td>
                 <td style={tdStyle}><CategoryTag category={p.category} categories={data.categories || []} /></td>
@@ -67,6 +70,7 @@ export default function Production({ data, formulasWithCosts, loadData, showToas
             ))}
           </tbody>
         </table>
+        )}
       </Card>
       {modal && (
         <Modal title="Orden de Producción" onClose={() => setModal(false)}>
