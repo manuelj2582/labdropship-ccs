@@ -344,6 +344,8 @@ export const presentations = {
     return data;
   },
   delete: async (id, name, user) => {
+    // Delete associated product first
+    await supabase.from('products').delete().eq('presentation_id', id);
     const { error } = await supabase.from('presentations').delete().eq('id', id);
     if (error) throw error;
     await activityLog.log(user, 'eliminar', 'presentacion', id, name);

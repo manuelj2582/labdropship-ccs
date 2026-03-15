@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Button, Modal, ModalActions, Input, Select, CategoryTag } from './UI';
 import { UNITS } from '../data/initialData';
+import { supabase } from '../lib/supabase';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
 export default function Formulas({ data, formulasWithCosts, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [presModal, setPresModal] = useState(null); // formula id for presentation modal
+  const [editPresId, setEditPresId] = useState(null); // presentation id when editing
   const [filter, setFilter] = useState('all');
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -49,35 +51,53 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
   // ── Presentations ──
   const openPresModal = (formulaId) => {
     setPresForm({ name: '', amount: 0, unit: 'ml', envase_id: '', sale_price: 0, sku: '' });
+    setEditPresId(null);
     setPresModal(formulaId);
+  };
+
+  const openEditPres = (pres) => {
+    setPresForm({
+      name: pres.name, amount: pres.amount, unit: pres.unit,
+      envase_id: pres.envase_id || '', sale_price: pres.sale_price || 0, sku: pres.sku || '',
+    });
+    setEditPresId(pres.id);
+    setPresModal(pres.formula_id);
   };
 
   const savePresentation = async () => {
     if (!presForm.name || !presForm.amount) return;
     setSaving(true);
     try {
-      const pres = await db.presentations.create({
-        formula_id: presModal,
-        name: presForm.name,
-        amount: presForm.amount,
-        unit: presForm.unit,
-        envase_id: presForm.envase_id || null,
-        sale_price: presForm.sale_price || 0,
-        sku: presForm.sku || null,
-      }, user);
-      // Auto-create product for this presentation
-      const formula = data.formulas.find(f => f.id === presModal);
-      await db.products.create({
-        formula_id: presModal,
-        presentation_id: pres.id,
-        name: presForm.name,
-        category: formula?.category || '',
-        stock: 0,
-        price: presForm.sale_price || 0,
-      }, user);
+      if (editPresId) {
+        // Edit existing
+        await db.presentations.update(editPresId, {
+          name: presForm.name, amount: presForm.amount, unit: presForm.unit,
+          envase_id: presForm.envase_id || null, sale_price: presForm.sale_price || 0,
+          sku: presForm.sku || null,
+        }, user);
+        // Update associated product too
+        const { data: prods } = await supabase.from('products').select('id').eq('presentation_id', editPresId);
+        if (prods && prods.length > 0) {
+          await db.products.update(prods[0].id, { name: presForm.name, price: presForm.sale_price || 0 }, user);
+        }
+        showToast(`Presentación "${presForm.name}" actualizada`);
+      } else {
+        // Create new
+        const pres = await db.presentations.create({
+          formula_id: presModal, name: presForm.name, amount: presForm.amount,
+          unit: presForm.unit, envase_id: presForm.envase_id || null,
+          sale_price: presForm.sale_price || 0, sku: presForm.sku || null,
+        }, user);
+        const formula = data.formulas.find(f => f.id === presModal);
+        await db.products.create({
+          formula_id: presModal, presentation_id: pres.id, name: presForm.name,
+          category: formula?.category || '', stock: 0, price: presForm.sale_price || 0,
+        }, user);
+        showToast(`Presentación "${presForm.name}" creada`);
+      }
       await loadData();
-      showToast(`Presentación "${presForm.name}" creada`);
       setPresModal(null);
+      setEditPresId(null);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
     finally { setSaving(false); }
   };
@@ -189,7 +209,10 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
                                 {pres.amount}{pres.unit} {pres.sku && `· SKU: ${pres.sku}`}
                               </div>
                             </div>
-                            <Button variant="danger" size="sm" onClick={() => removePresentation(pres)}>✕</Button>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <Button variant="ghost" size="sm" onClick={() => openEditPres(pres)}>✎</Button>
+                              <Button variant="danger" size="sm" onClick={() => removePresentation(pres)}>✕</Button>
+                            </div>
                           </div>
                           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 3, fontSize: 12 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -273,7 +296,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
 
       {/* New Presentation Modal */}
       {presModal && (
-        <Modal title="Nueva Presentación" onClose={() => setPresModal(null)}>
+        <Modal title={editPresId ? 'Editar Presentación' : 'Nueva Presentación'} onClose={() => { setPresModal(null); setEditPresId(null); }}>
           <Input label="Nombre de la presentación" value={presForm.name} onChange={v => setPresForm({ ...presForm, name: v })}
             placeholder="Ej: Serum Vit C 30ml" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -326,7 +349,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
           })()}
 
           <ModalActions onCancel={() => setPresModal(null)} onConfirm={savePresentation}
-            confirmLabel={saving ? 'Guardando...' : 'Crear Presentación'} confirmDisabled={saving} />
+            confirmLabel={saving ? 'Guardando...' : editPresId ? 'Actualizar' : 'Crear Presentación'} confirmDisabled={saving} />
         </Modal>
       )}
     </div>
