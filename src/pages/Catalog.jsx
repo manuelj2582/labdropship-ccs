@@ -23,6 +23,20 @@ export default function Catalog() {
   const [hoveredProduct, setHoveredProduct] = useState(null);
 
   useEffect(() => {
+    // Override global overflow:hidden for catalog page
+    document.documentElement.style.overflow = 'auto';
+    document.body.style.overflow = 'auto';
+    document.getElementById('root').style.overflow = 'auto';
+    document.getElementById('root').style.height = 'auto';
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.getElementById('root').style.overflow = '';
+      document.getElementById('root').style.height = '';
+    };
+  }, []);
+
+  useEffect(() => {
     loadProducts();
   }, []);
 
@@ -95,8 +109,8 @@ export default function Catalog() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
               }}>🧪</div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em' }}>LabDropship</div>
-                <div style={{ fontSize: 10, color: '#4F6289', fontFamily: "'JetBrains Mono', monospace" }}>CATÁLOGO MAYORISTA</div>
+                <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em' }}>VeneLab</div>
+                <div style={{ fontSize: 10, color: '#4F6289', fontFamily: "'JetBrains Mono', monospace" }}>CATÁLOGO MAYORISTA · CCS</div>
               </div>
             </div>
             <a href="/" style={{
@@ -307,10 +321,10 @@ export default function Catalog() {
               background: 'linear-gradient(135deg, #6C72FF, #A78BFA)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
             }}>🧪</div>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>LabDropship CCS</span>
+            <span style={{ fontWeight: 700, fontSize: 15 }}>VeneLab</span>
           </div>
           <p style={{ fontSize: 13, color: '#4F6289', marginBottom: 16, lineHeight: 1.6 }}>
-            Fabricantes de productos para dropshipping · Caracas, Venezuela
+            Laboratorio de productos para dropshipping · Caracas, Venezuela
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
             <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" style={{
@@ -320,7 +334,7 @@ export default function Catalog() {
             }}>
               📱 WhatsApp
             </a>
-            <a href="mailto:ventas@labdropship.com" style={{
+            <a href="mailto:ventas@venelab.com" style={{
               padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600,
               background: 'rgba(108,114,255,0.1)', color: '#6C72FF',
               border: '1px solid rgba(108,114,255,0.2)', textDecoration: 'none',
@@ -329,7 +343,7 @@ export default function Catalog() {
             </a>
           </div>
           <div style={{ marginTop: 24, fontSize: 11, color: '#2D3A54', fontFamily: "'JetBrains Mono', monospace" }}>
-            © 2026 LabDropship CCS · Todos los derechos reservados
+            © 2026 VeneLab · Todos los derechos reservados
           </div>
         </div>
       </footer>

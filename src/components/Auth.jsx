@@ -87,10 +87,10 @@ export function LoginPage() {
             fontSize: 28,
           }}>🧪</div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>
-            LabDropship CCS
+            VeneLab
           </h1>
           <p style={{ fontSize: 12, color: 'var(--text-dim)', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
-            Sistema de Gestión · Caracas
+            Sistema de Gestión
           </p>
         </div>
 

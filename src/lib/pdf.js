@@ -4,7 +4,7 @@ import 'jspdf-autotable';
 export function generateInvoicePDF(sale, products, companyInfo = {}) {
   const doc = new jsPDF();
   const company = {
-    name: companyInfo.name || 'LabDropship CCS',
+    name: companyInfo.name || 'VeneLab',
     rif: companyInfo.rif || 'J-XXXXXXXX-X',
     address: companyInfo.address || 'Caracas, Venezuela',
     phone: companyInfo.phone || '+58 XXX-XXX-XXXX',
@@ -174,7 +174,7 @@ export function generateInvoicePDF(sale, products, companyInfo = {}) {
 export function generateDeliveryNotePDF(sale, products, companyInfo = {}) {
   const doc = new jsPDF();
   const company = {
-    name: companyInfo.name || 'LabDropship CCS',
+    name: companyInfo.name || 'VeneLab',
     rif: companyInfo.rif || 'J-XXXXXXXX-X',
     address: companyInfo.address || 'Caracas, Venezuela',
     phone: companyInfo.phone || '+58 XXX-XXX-XXXX',

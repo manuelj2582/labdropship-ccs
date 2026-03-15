@@ -34,8 +34,8 @@ export default function Sidebar({ view, setView, open, setOpen }) {
         }}>🧪</div>
         {open && (
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>LabDropship</div>
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 500 }}>CCS · VENEZUELA</div>
+            <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>VeneLab</div>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 500 }}>CARACAS · VENEZUELA</div>
           </div>
         )}
       </div>
@@ -64,7 +64,7 @@ export default function Sidebar({ view, setView, open, setOpen }) {
       {open && (
         <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
           <div>v2.2.0 · 2026</div>
-          <div style={{ marginTop: 2 }}>Caracas, Venezuela</div>
+          <div style={{ marginTop: 2 }}>venelab.com</div>
         </div>
       )}
     </div>
