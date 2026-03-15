@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Modal, ModalActions, Input, CategoryTag } from './UI';
-
+import { supabase } from '../lib/supabase';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
@@ -22,8 +22,18 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
   };
 
   const remove = async (id, name) => {
-    try { await db.products.delete(id, name, user); await loadData(); showToast('Producto eliminado'); }
-    catch (err) { showToast('Error: ' + err.message, 'error'); }
+    if (!confirm(`¿Eliminar "${name}"? Esto no se puede deshacer.`)) return;
+    try {
+      // Check if product has sales
+      const { data: saleItems } = await supabase.from('sale_items').select('id').eq('product_id', id).limit(1);
+      if (saleItems && saleItems.length > 0) {
+        showToast('No se puede eliminar: este producto tiene ventas registradas', 'error');
+        return;
+      }
+      await db.products.delete(id, name, user);
+      await loadData();
+      showToast('Producto eliminado');
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
   let filtered = filter === 'all' ? data.products : data.products.filter(p => p.category === filter);
