@@ -3,7 +3,6 @@ import { Card, Button, Modal, ModalActions, Input, Select, Textarea, StatusBadge
 import { PAYMENT_METHODS } from '../data/initialData';
 import * as db from '../lib/db';
 import { generateInvoicePDF, generateDeliveryNotePDF } from '../lib/pdf';
-import { notifyNewOrder, notifyStatusChange } from '../lib/email';
 import { fmt, fmtDate, today } from '../utils';
 
 export default function Sales({ data, loadData, showToast, searchQuery }) {
@@ -54,16 +53,6 @@ export default function Sales({ data, loadData, showToast, searchQuery }) {
       await loadData();
       showToast(`Pedido registrado · ${totalUnits} uds · ${fmt(total)}`);
       setModal(false);
-      // Send email notification (non-blocking)
-      notifyNewOrder({
-        invoiceNum: 'Nuevo pedido', clientName: client.name,
-        total, totalUnits,
-        items: form.items.map(it => {
-          const p = data.products.find(pr => pr.id === it.productId);
-          return { name: p?.name || '—', qty: it.qty, unitPrice: it.unitPrice };
-        }),
-        paymentMethod: form.paymentMethod, createdBy: user?.email,
-      });
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
     finally { setSaving(false); }
   };
@@ -71,16 +60,9 @@ export default function Sales({ data, loadData, showToast, searchQuery }) {
   const updateStatus = async (saleId, newStatus) => {
     try {
       const sale = data.sales.find(s => s.id === saleId);
-      const oldStatus = sale?.status;
       await db.sales.updateStatus(saleId, newStatus, sale?.invoice_num, user);
       await loadData();
       showToast(`Pedido ${newStatus}`);
-      // Send email notification (non-blocking)
-      const saleTotal = (sale?.items || []).reduce((s, it) => s + it.qty * it.unit_price, 0);
-      notifyStatusChange({
-        invoiceNum: sale?.invoice_num, clientName: sale?.client_name,
-        oldStatus, newStatus, total: saleTotal, changedBy: user?.email,
-      });
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
