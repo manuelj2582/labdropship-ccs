@@ -349,36 +349,3 @@ export const presentations = {
     await activityLog.log(user, 'eliminar', 'presentacion', id, name);
   },
 };
-
-// ── Presentations ──
-export const presentations = {
-  getAll: async () => {
-    const { data, error } = await supabase.from('presentations')
-      .select('*').order('formula_id').order('sort_order');
-    if (error) throw error;
-    return data;
-  },
-  getByFormula: async (formulaId) => {
-    const { data, error } = await supabase.from('presentations')
-      .select('*').eq('formula_id', formulaId).order('sort_order');
-    if (error) throw error;
-    return data;
-  },
-  create: async (presentation, user) => {
-    const { data, error } = await supabase.from('presentations').insert(presentation).select().single();
-    if (error) throw error;
-    await activityLog.log(user, 'crear', 'presentacion', data.id, data.name, { amount: presentation.amount, unit: presentation.unit });
-    return data;
-  },
-  update: async (id, updates, user) => {
-    const { data, error } = await supabase.from('presentations').update(updates).eq('id', id).select().single();
-    if (error) throw error;
-    await activityLog.log(user, 'editar', 'presentacion', data.id, data.name, updates);
-    return data;
-  },
-  delete: async (id, name, user) => {
-    const { error } = await supabase.from('presentations').delete().eq('id', id);
-    if (error) throw error;
-    await activityLog.log(user, 'eliminar', 'presentacion', id, name);
-  },
-};
