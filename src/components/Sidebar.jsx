@@ -63,7 +63,7 @@ export default function Sidebar({ view, setView, open, setOpen }) {
       </nav>
       {open && (
         <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-          <div>v2.1.0 · 2026</div>
+          <div>v2.2.0 · 2026</div>
           <div style={{ marginTop: 2 }}>Caracas, Venezuela</div>
         </div>
       )}
