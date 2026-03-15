@@ -285,27 +285,54 @@ export const productionLog = {
 };
 
 // ── Produce ──
-export const produce = async (formula, batches, rawMats, user) => {
+export const produce = async (formula, presentation, batches, rawMats, user) => {
+  const baseAmt = formula.base_amount || formula.yield_amount || 100;
+  const ratio = presentation.amount / baseAmt;
   const materialsUsed = [];
+
+  // 1. Deduct raw materials (proportional to presentation size)
   for (const ing of formula.ingredients) {
     const mat = rawMats.find(m => m.id === ing.material_id);
     if (!mat) throw new Error(`Material no encontrado: ${ing.material_id}`);
-    const needed = ing.amount * batches;
-    if (mat.stock < needed) throw new Error(`Stock insuficiente de ${mat.name}`);
+    const needed = ing.amount * ratio * batches;
+    if (mat.stock < needed) throw new Error(`Stock insuficiente de ${mat.name} (necesitas ${needed.toFixed(2)}, tienes ${mat.stock})`);
     await rawMaterials.updateStock(mat.id, mat.stock - needed);
     materialsUsed.push({ materialId: mat.id, materialName: mat.name, amountUsed: needed, unit: mat.unit });
   }
-  const { data: prods } = await supabase.from('products').select('*').eq('formula_id', formula.id);
+
+  // 2. Deduct envase stock
+  if (presentation.envase_id) {
+    const envase = rawMats.find(m => m.id === presentation.envase_id);
+    if (envase) {
+      if (envase.stock < batches) throw new Error(`Stock insuficiente de envase "${envase.name}" (necesitas ${batches}, tienes ${envase.stock})`);
+      await rawMaterials.updateStock(envase.id, envase.stock - batches);
+      materialsUsed.push({ materialId: envase.id, materialName: envase.name, amountUsed: batches, unit: 'unidad' });
+    }
+  }
+
+  // 3. Add stock to the correct product (by presentation_id)
+  const { data: prods } = await supabase.from('products').select('*').eq('presentation_id', presentation.id);
   if (prods && prods.length > 0) {
     await products.updateStock(prods[0].id, prods[0].stock + batches);
   }
+
+  // 4. Calculate cost
+  const matCost = formula.ingredients.reduce((s, ing) => {
+    const mat = rawMats.find(m => m.id === ing.material_id);
+    return s + (mat ? mat.cost * ing.amount * ratio : 0);
+  }, 0);
+  const envaseCost = presentation.envase?.cost || 0;
+  const totalCostPerUnit = matCost + envaseCost;
+
+  // 5. Log
   await productionLog.create({
-    formulaId: formula.id, formulaName: formula.name, batches,
-    totalYield: `${formula.yield_amount * batches} ${formula.yield_unit}`,
-    totalCost: formula._productionCost * batches,
+    formulaId: formula.id, formulaName: `${presentation.name}`,
+    batches,
+    totalYield: `${batches} uds de ${presentation.amount}${presentation.unit}`,
+    totalCost: totalCostPerUnit * batches,
     producedBy: user?.id, producedByEmail: user?.email, notes: '',
   }, materialsUsed);
-  await activityLog.log(user, 'producir', 'produccion', formula.id, formula.name, { lotes: batches, yield: `${formula.yield_amount * batches} ${formula.yield_unit}` });
+  await activityLog.log(user, 'producir', 'produccion', presentation.id, presentation.name, { lotes: batches, presentacion: `${presentation.amount}${presentation.unit}` });
 };
 
 // ── Categories ──
