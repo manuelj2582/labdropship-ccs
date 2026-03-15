@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, StatCard } from './UI';
-import { CATEGORIES } from '../data/initialData';
+
 import { fmt } from '../utils';
 
 export default function Reports({ data, formulasWithCosts }) {
@@ -20,9 +20,9 @@ export default function Reports({ data, formulasWithCosts }) {
     const grossProfit = salesCompleted + salesPending - totalProdCost;
 
     const categoryStats = {};
-    CATEGORIES.forEach(cat => {
-      const catProds = data.products.filter(p => p.category === cat.id);
-      const catFormulas = formulasWithCosts.filter(f => f.category === cat.id);
+    ((data.categories) || []).forEach(cat => {
+      const catProds = data.products.filter(p => p.category === cat.slug);
+      const catFormulas = formulasWithCosts.filter(f => f.category === cat.slug);
       let revenue = 0, units = 0, cost = 0;
       data.sales.forEach(sale => {
         (sale.items||[]).forEach(it => {
@@ -30,7 +30,7 @@ export default function Reports({ data, formulasWithCosts }) {
           if (prod) { revenue += it.qty * it.unit_price; units += it.qty; const f = catFormulas.find(fo => fo.id === prod.formula_id); if (f) cost += f._productionCost * it.qty; }
         });
       });
-      categoryStats[cat.id] = { revenue, units, cost, profit: revenue - cost, margin: revenue > 0 ? ((revenue - cost) / revenue * 100) : 0 };
+      categoryStats[cat.slug] = { revenue, units, cost, profit: revenue - cost, margin: revenue > 0 ? ((revenue - cost) / revenue * 100) : 0 };
     });
 
     const clientStats = {};
@@ -72,10 +72,10 @@ export default function Reports({ data, formulasWithCosts }) {
           ))}
         </Card>
         <Card title="Rendimiento por Línea">
-          {CATEGORIES.map(cat => {
-            const st = report.categoryStats[cat.id];
+          {((data.categories) || []).map(cat => {
+            const st = report.categoryStats[cat.slug];
             return (
-              <div key={cat.id} style={{ marginBottom: 18 }}>
+              <div key={cat.slug} style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{cat.icon} {cat.name}</span>
                   <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>{fmt(st.revenue)}</span>

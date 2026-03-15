@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, StatCard, StatusBadge, tableStyle, thStyle, tdStyle } from './UI';
-import { CATEGORIES } from '../data/initialData';
+
 import { fmt, fmtDate } from '../utils';
 
 export default function Dashboard({ data, formulasWithCosts }) {
@@ -55,10 +55,10 @@ export default function Dashboard({ data, formulasWithCosts }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
         <Card title="Ventas por Línea">
-          {CATEGORIES.map(cat => {
-            const val = stats.salesByCategory[cat.id] || 0;
+          {((data.categories) || []).map(cat => {
+            const val = stats.salesByCategory[cat.slug] || 0;
             return (
-              <div key={cat.id} style={{ marginBottom: 16 }}>
+              <div key={cat.slug} style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                   <span style={{ fontWeight: 500 }}>{cat.icon} {cat.name}</span>
                   <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{fmt(val)}</span>

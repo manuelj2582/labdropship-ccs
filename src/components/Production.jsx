@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Modal, ModalActions, Select, Input, CategoryTag, tableStyle, thStyle, tdStyle } from './UI';
-import { CATEGORIES } from '../data/initialData';
+
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
@@ -44,7 +44,7 @@ export default function Production({ data, formulasWithCosts, loadData, showToas
           }));
           return (
             <Card key={f.id} style={{ textAlign: 'center' }}>
-              <CategoryTag category={f.category} categories={CATEGORIES} />
+              <CategoryTag category={f.category} categories={data.categories || []} />
               <div style={{ fontSize: 13, fontWeight: 600, marginTop: 8 }}>{f.name}</div>
               <div style={{ fontSize: 36, fontWeight: 800, color: maxB > 10 ? 'var(--success)' : maxB > 0 ? 'var(--warning)' : 'var(--danger)', margin: '8px 0 2px' }}>{maxB}</div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>lotes · {maxB * f.yield_amount} {f.yield_unit}</div>
@@ -59,7 +59,7 @@ export default function Production({ data, formulasWithCosts, loadData, showToas
             {data.products.map(p => (
               <tr key={p.id}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{p.name}</td>
-                <td style={tdStyle}><CategoryTag category={p.category} categories={CATEGORIES} /></td>
+                <td style={tdStyle}><CategoryTag category={p.category} categories={data.categories || []} /></td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{p.stock.toLocaleString()} uds</td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>{fmt(p.price)}</td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', color: 'var(--accent)', fontWeight: 700 }}>{fmt(p.stock * p.price)}</td>

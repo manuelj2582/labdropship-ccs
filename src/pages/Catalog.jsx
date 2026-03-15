@@ -2,28 +2,19 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-const CATEGORIES = [
-  { id: 'all', name: 'Todos', icon: '🧪', gradient: 'linear-gradient(135deg, #6C72FF, #A78BFA)' },
-  { id: 'serum', name: 'Serums & Skincare', icon: '💧', gradient: 'linear-gradient(135deg, #A78BFA, #C4B5FD)', color: '#A78BFA' },
-  { id: 'auto', name: 'Automotriz', icon: '🚗', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)', color: '#60A5FA' },
-  { id: 'mascotas', name: 'Mascotas', icon: '🐾', gradient: 'linear-gradient(135deg, #059669, #34D399)', color: '#34D399' },
-  { id: 'hogar', name: 'Limpieza & Hogar', icon: '🏠', gradient: 'linear-gradient(135deg, #D97706, #FBBF24)', color: '#FBBF24' },
-];
-
 const WHATSAPP_NUMBER = '584121234567'; // CAMBIAR por tu número real
 
 export default function Catalog() {
   const { category: urlCategory } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [formulas, setFormulas] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(urlCategory || 'all');
   const [search, setSearch] = useState('');
   const [hoveredProduct, setHoveredProduct] = useState(null);
 
   useEffect(() => {
-    // Override global overflow:hidden for catalog page
     document.documentElement.style.overflow = 'auto';
     document.body.style.overflow = 'auto';
     document.getElementById('root').style.overflow = 'auto';
@@ -46,15 +37,23 @@ export default function Catalog() {
 
   const loadProducts = async () => {
     try {
-      const [{ data: prods }, { data: forms }] = await Promise.all([
+      const [{ data: prods }, { data: cats }] = await Promise.all([
         supabase.from('products').select('*').gt('stock', 0).order('name'),
-        supabase.from('formulas').select('*, ingredients:formula_ingredients(id, material_id, amount)'),
+        supabase.from('categories').select('*').order('sort_order'),
       ]);
       setProducts(prods || []);
-      setFormulas(forms || []);
+      setCategories(cats || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+
+  // Build display categories with "Todos" prepended
+  const displayCategories = useMemo(() => {
+    return [
+      { slug: 'all', name: 'Todos', icon: '🧪', color: '#6C72FF' },
+      ...categories,
+    ];
+  }, [categories]);
 
   const filtered = useMemo(() => {
     let result = products;
@@ -159,16 +158,16 @@ export default function Catalog() {
           display: 'flex', gap: 10, marginBottom: 32, overflowX: 'auto',
           paddingBottom: 4, scrollbarWidth: 'none',
         }}>
-          {CATEGORIES.map(cat => {
-            const active = activeCategory === cat.id;
-            const count = catCounts[cat.id] || 0;
+          {displayCategories.map(cat => {
+            const active = activeCategory === cat.slug;
+            const count = catCounts[cat.slug] || 0;
             return (
-              <button key={cat.id} onClick={() => selectCategory(cat.id)} style={{
+              <button key={cat.slug} onClick={() => selectCategory(cat.slug)} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '10px 20px', borderRadius: 50, border: 'none',
                 cursor: 'pointer', whiteSpace: 'nowrap', transition: '0.2s',
                 fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600,
-                background: active ? cat.gradient : 'rgba(255,255,255,0.04)',
+                background: active ? `linear-gradient(135deg, ${cat.color || '#6C72FF'}, ${cat.color || '#6C72FF'}CC)` : 'rgba(255,255,255,0.04)',
                 color: active ? '#fff' : '#8B9DC3',
                 boxShadow: active ? '0 4px 20px rgba(108,114,255,0.3)' : 'none',
               }}>
@@ -200,7 +199,7 @@ export default function Catalog() {
             gap: 18,
           }}>
             {filtered.map(product => {
-              const cat = CATEGORIES.find(c => c.id === product.category);
+              const cat = displayCategories.find(c => c.slug === product.category);
               const stock = stockLevel(product.stock);
               const isHovered = hoveredProduct === product.id;
               return (
@@ -220,7 +219,7 @@ export default function Catalog() {
                   {/* Category accent line */}
                   <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                    background: cat?.gradient || 'var(--accent)',
+                    background: cat?.color || 'var(--accent)',
                     opacity: isHovered ? 1 : 0.4, transition: '0.25s',
                   }} />
 

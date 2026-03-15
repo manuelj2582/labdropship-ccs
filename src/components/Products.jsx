@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Modal, ModalActions, Input, CategoryTag } from './UI';
-import { CATEGORIES } from '../data/initialData';
+
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
@@ -34,18 +34,18 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 6 }}>
           <Button variant={filter === 'all' ? 'primary' : 'muted'} size="sm" onClick={() => setFilter('all')}>Todos ({data.products.length})</Button>
-          {CATEGORIES.map(c => <Button key={c.id} variant={filter === c.id ? 'primary' : 'muted'} size="sm" onClick={() => setFilter(c.id)}>{c.icon} {data.products.filter(p => p.category === c.id).length}</Button>)}
+          {((data.categories) || []).map(c => <Button key={c.slug} variant={filter === c.slug ? 'primary' : 'muted'} size="sm" onClick={() => setFilter(c.slug)}>{c.icon} {data.products.filter(p => p.category === c.slug).length}</Button>)}
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         {filtered.map(p => {
-          const cat = CATEGORIES.find(c => c.id === p.category);
+          const cat = ((data.categories) || []).find(c => c.slug === p.category);
           const formula = formulasWithCosts.find(f => f.id === p.formula_id);
           return (
             <Card key={p.id} style={{ position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 56, opacity: 0.05 }}>{cat?.icon}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <CategoryTag category={p.category} categories={CATEGORIES} />
+                <CategoryTag category={p.category} categories={data.categories || []} />
                 <div style={{ display: 'flex', gap: 4 }}>
                   <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>✎</Button>
                   <Button variant="danger" size="sm" onClick={() => remove(p.id, p.name)}>✕</Button>

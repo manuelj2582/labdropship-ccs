@@ -196,7 +196,7 @@ export function StatusBadge({ status }) {
 }
 
 export function CategoryTag({ category, categories }) {
-  const cat = categories.find(c => c.id === category);
+  const cat = (categories || []).find(c => c.slug === category || c.id === category);
   if (!cat) return null;
   return (
     <span style={{

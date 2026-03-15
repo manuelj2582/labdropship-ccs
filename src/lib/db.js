@@ -286,3 +286,29 @@ export const produce = async (formula, batches, rawMats, user) => {
   }, materialsUsed);
   await activityLog.log(user, 'producir', 'produccion', formula.id, formula.name, { lotes: batches, yield: `${formula.yield_amount * batches} ${formula.yield_unit}` });
 };
+
+// ── Categories ──
+export const categories = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('categories').select('*').order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  create: async (category, user) => {
+    const { data, error } = await supabase.from('categories').insert(category).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'crear', 'categoria', data.id, data.name);
+    return data;
+  },
+  update: async (id, updates, user) => {
+    const { data, error } = await supabase.from('categories').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'editar', 'categoria', data.id, data.name, updates);
+    return data;
+  },
+  delete: async (id, name, user) => {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) throw error;
+    await activityLog.log(user, 'eliminar', 'categoria', id, name);
+  },
+};

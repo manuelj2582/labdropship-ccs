@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Modal, ModalActions, Input, Select, CategoryTag } from './UI';
-import { CATEGORIES, UNITS } from '../data/initialData';
+import { UNITS } from '../data/initialData';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
@@ -8,9 +8,9 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
   const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState('all');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', category: 'serum', yieldAmount: 0, yieldUnit: 'ml', salePrice: 0, ingredients: [{ materialId: '', amount: 0 }] });
+  const [form, setForm] = useState({ name: '', category: '', yieldAmount: 0, yieldUnit: 'ml', salePrice: 0, ingredients: [{ materialId: '', amount: 0 }] });
 
-  const openAdd = () => { setForm({ name: '', category: 'serum', yieldAmount: 0, yieldUnit: 'ml', salePrice: 0, ingredients: [{ materialId: '', amount: 0 }] }); setModal(true); };
+  const openAdd = () => { setForm({ name: '', category: '', yieldAmount: 0, yieldUnit: 'ml', salePrice: 0, ingredients: [{ materialId: '', amount: 0 }] }); setModal(true); };
   const addIng = () => setForm({ ...form, ingredients: [...form.ingredients, { materialId: '', amount: 0 }] });
   const updateIng = (i, k, v) => { const ings = [...form.ingredients]; ings[i] = { ...ings[i], [k]: k === 'amount' ? +v : v }; setForm({ ...form, ingredients: ings }); };
   const removeIng = (i) => setForm({ ...form, ingredients: form.ingredients.filter((_, idx) => idx !== i) });
@@ -41,7 +41,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 6 }}>
           <Button variant={filter === 'all' ? 'primary' : 'muted'} size="sm" onClick={() => setFilter('all')}>Todas</Button>
-          {CATEGORIES.map(c => <Button key={c.id} variant={filter === c.id ? 'primary' : 'muted'} size="sm" onClick={() => setFilter(c.id)}>{c.icon} {c.name}</Button>)}
+          {((data.categories) || []).map(c => <Button key={c.slug} variant={filter === c.slug ? 'primary' : 'muted'} size="sm" onClick={() => setFilter(c.slug)}>{c.icon} {c.name}</Button>)}
         </div>
         <Button onClick={openAdd}>+ Nueva Fórmula</Button>
       </div>
@@ -50,7 +50,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
           <Card key={f.id}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <CategoryTag category={f.category} categories={CATEGORIES} />
+                <CategoryTag category={f.category} categories={data.categories || []} />
                 <h4 style={{ margin: '10px 0 4px', fontSize: 16, fontWeight: 700 }}>{f.name}</h4>
                 <span style={{ color: 'var(--text-dim)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>Rinde: {f.yield_amount} {f.yield_unit}</span>
               </div>
@@ -82,7 +82,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
         <Modal title="Nueva Fórmula" onClose={() => setModal(false)} wide>
           <Input label="Nombre" value={form.name} onChange={v => setForm({...form, name: v})} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            <Select label="Categoría" value={form.category} options={CATEGORIES.map(c => ({value: c.id, label: c.icon+' '+c.name}))} onChange={v => setForm({...form, category: v})} />
+            <Select label="Categoría" value={form.category} options={((data.categories) || []).map(c => ({value: c.slug, label: c.icon+' '+c.name}))} onChange={v => setForm({...form, category: v})} />
             <Input label="Rendimiento" type="number" value={form.yieldAmount} onChange={v => setForm({...form, yieldAmount: +v})} />
             <Select label="Unidad" value={form.yieldUnit} options={UNITS} onChange={v => setForm({...form, yieldUnit: v})} />
           </div>
