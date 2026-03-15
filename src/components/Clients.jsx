@@ -29,16 +29,16 @@ export default function Clients({ data, loadData, showToast, searchQuery }) {
     if (!form.name || !form.rif) return;
     setSaving(true);
     try {
-      if (editId) { await db.clients.update(editId, form); showToast('Cliente actualizado'); }
-      else { await db.clients.create(form); showToast('Cliente registrado'); }
+      if (editId) { await db.clients.update(editId, form, user); showToast('Cliente actualizado'); }
+      else { await db.clients.create(form, user); showToast('Cliente registrado'); }
       await loadData();
       setModal(false);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
     finally { setSaving(false); }
   };
 
-  const remove = async (id) => {
-    try { await db.clients.delete(id); await loadData(); showToast('Cliente eliminado'); }
+  const remove = async (id, name) => {
+    try { await db.clients.delete(id, name, user); await loadData(); showToast('Cliente eliminado'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
@@ -72,7 +72,7 @@ export default function Clients({ data, loadData, showToast, searchQuery }) {
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>✎</Button>
-                  <Button variant="danger" size="sm" onClick={() => remove(c.id)}>✕</Button>
+                  <Button variant="danger" size="sm" onClick={() => remove(c.id, c.name)}>✕</Button>
                 </div>
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 3 }}>

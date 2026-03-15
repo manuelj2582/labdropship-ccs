@@ -24,7 +24,7 @@ export default function Formulas({ data, formulasWithCosts, loadData, showToast,
     if (!form.name || form.ingredients.some(i => !i.materialId)) return;
     setSaving(true);
     try {
-      const f = await db.formulas.create(form, form.ingredients);
+      const f = await db.formulas.create(form, form.ingredients, user);
       await db.products.create({ formula_id: f.id, name: form.name, category: form.category, stock: 0, price: form.salePrice });
       await loadData();
       showToast('Fórmula creada y producto registrado');

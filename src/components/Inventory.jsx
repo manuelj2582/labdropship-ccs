@@ -18,10 +18,10 @@ export default function Inventory({ data, loadData, showToast, searchQuery }) {
     setSaving(true);
     try {
       if (editId) {
-        await db.rawMaterials.update(editId, form);
+        await db.rawMaterials.update(editId, form, user);
         showToast('Material actualizado');
       } else {
-        await db.rawMaterials.create(form);
+        await db.rawMaterials.create(form, user);
         showToast('Material agregado');
       }
       await loadData();
@@ -30,9 +30,9 @@ export default function Inventory({ data, loadData, showToast, searchQuery }) {
     finally { setSaving(false); }
   };
 
-  const remove = async (id) => {
+  const remove = async (id, name) => {
     try {
-      await db.rawMaterials.delete(id);
+      await db.rawMaterials.delete(id, name, user);
       await loadData();
       showToast('Material eliminado');
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
@@ -70,7 +70,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery }) {
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>Editar</Button>
-                      <Button variant="danger" size="sm" onClick={() => remove(m.id)}>✕</Button>
+                      <Button variant="danger" size="sm" onClick={() => remove(m.id, m.name)}>✕</Button>
                     </div>
                   </td>
                 </tr>

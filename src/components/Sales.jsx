@@ -49,7 +49,7 @@ export default function Sales({ data, loadData, showToast, searchQuery }) {
         clientContact: client.contact,
         paymentMethod: form.paymentMethod,
         notes: form.notes,
-      }, form.items.map(it => ({ productId: it.productId, qty: it.qty, unitPrice: it.unitPrice })));
+      }, form.items.map(it => ({ productId: it.productId, qty: it.qty, unitPrice: it.unitPrice })), user);
       await loadData();
       showToast(`Pedido registrado · ${totalUnits} uds · ${fmt(total)}`);
       setModal(false);
@@ -59,7 +59,8 @@ export default function Sales({ data, loadData, showToast, searchQuery }) {
 
   const updateStatus = async (saleId, newStatus) => {
     try {
-      await db.sales.updateStatus(saleId, newStatus);
+      const sale = data.sales.find(s => s.id === saleId);
+      await db.sales.updateStatus(saleId, newStatus, sale?.invoice_num, user);
       await loadData();
       showToast(`Pedido ${newStatus}`);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
@@ -68,7 +69,8 @@ export default function Sales({ data, loadData, showToast, searchQuery }) {
   const removeSale = async (saleId) => {
     if (!confirm('¿Eliminar esta venta? Se restaurará el stock.')) return;
     try {
-      await db.sales.delete(saleId);
+      const sale = data.sales.find(s => s.id === saleId);
+      await db.sales.delete(saleId, sale?.invoice_num, user);
       await loadData();
       showToast('Venta eliminada y stock restaurado');
     } catch (err) { showToast('Error: ' + err.message, 'error'); }

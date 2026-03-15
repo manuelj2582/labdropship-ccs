@@ -16,16 +16,16 @@ export default function Suppliers({ data, loadData, showToast, searchQuery }) {
     if (!form.name) return;
     setSaving(true);
     try {
-      if (editId) { await db.suppliers.update(editId, form); showToast('Proveedor actualizado'); }
-      else { await db.suppliers.create(form); showToast('Proveedor agregado'); }
+      if (editId) { await db.suppliers.update(editId, form, user); showToast('Proveedor actualizado'); }
+      else { await db.suppliers.create(form, user); showToast('Proveedor agregado'); }
       await loadData();
       setModal(false);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
     finally { setSaving(false); }
   };
 
-  const remove = async (id) => {
-    try { await db.suppliers.delete(id); await loadData(); showToast('Proveedor eliminado'); }
+  const remove = async (id, name) => {
+    try { await db.suppliers.delete(id, name, user); await loadData(); showToast('Proveedor eliminado'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
@@ -52,7 +52,7 @@ export default function Suppliers({ data, loadData, showToast, searchQuery }) {
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>✎</Button>
-                  <Button variant="danger" size="sm" onClick={() => remove(s.id)}>✕</Button>
+                  <Button variant="danger" size="sm" onClick={() => remove(s.id, s.name)}>✕</Button>
                 </div>
               </div>
               <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 3 }}>

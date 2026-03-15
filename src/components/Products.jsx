@@ -14,15 +14,15 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
   const save = async () => {
     if (!editModal) return;
     try {
-      await db.products.update(editModal.id, { price: +form.price, stock: +form.stock });
+      await db.products.update(editModal.id, { price: +form.price, stock: +form.stock }, user);
       await loadData();
       showToast('Producto actualizado');
       setEditModal(null);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
-  const remove = async (id) => {
-    try { await db.products.delete(id); await loadData(); showToast('Producto eliminado'); }
+  const remove = async (id, name) => {
+    try { await db.products.delete(id, name, user); await loadData(); showToast('Producto eliminado'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
@@ -48,7 +48,7 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
                 <CategoryTag category={p.category} categories={CATEGORIES} />
                 <div style={{ display: 'flex', gap: 4 }}>
                   <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>✎</Button>
-                  <Button variant="danger" size="sm" onClick={() => remove(p.id)}>✕</Button>
+                  <Button variant="danger" size="sm" onClick={() => remove(p.id, p.name)}>✕</Button>
                 </div>
               </div>
               <h4 style={{ margin: '10px 0 6px', fontSize: 14, fontWeight: 700 }}>{p.name}</h4>
