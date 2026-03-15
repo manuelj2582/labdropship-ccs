@@ -4,7 +4,7 @@ import { CLIENT_TYPES } from '../data/initialData';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Clients({ data, loadData, showToast, searchQuery }) {
+export default function Clients({ data, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);

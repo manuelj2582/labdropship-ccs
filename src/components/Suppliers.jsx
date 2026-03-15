@@ -3,7 +3,7 @@ import { Card, Button, Modal, ModalActions, Input } from './UI';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Suppliers({ data, loadData, showToast, searchQuery }) {
+export default function Suppliers({ data, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);

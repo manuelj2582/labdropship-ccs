@@ -5,7 +5,7 @@ import * as db from '../lib/db';
 import { generateInvoicePDF, generateDeliveryNotePDF } from '../lib/pdf';
 import { fmt, fmtDate, today } from '../utils';
 
-export default function Sales({ data, loadData, showToast, searchQuery }) {
+export default function Sales({ data, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState('all');
   const [saving, setSaving] = useState(false);

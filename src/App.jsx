@@ -197,7 +197,7 @@ function AppContent() {
           background: toast.type === 'error' ? 'var(--danger)' : 'var(--success)',
           color: '#fff', padding: '12px 22px', borderRadius: 'var(--radius-md)',
           fontSize: 13, fontWeight: 600, boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-          zIndex: 9999, animation: 'fadeIn 0.2s ease', textAlign: 'center',
+          zIndex: 999999, animation: 'fadeIn 0.2s ease', textAlign: 'center',
         }}>{toast.msg}</div>
       )}
     </div>

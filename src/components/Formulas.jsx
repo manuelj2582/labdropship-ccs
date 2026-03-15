@@ -4,7 +4,7 @@ import { CATEGORIES, UNITS } from '../data/initialData';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Formulas({ data, formulasWithCosts, loadData, showToast, searchQuery }) {
+export default function Formulas({ data, formulasWithCosts, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState('all');
   const [saving, setSaving] = useState(false);

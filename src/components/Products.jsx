@@ -4,7 +4,7 @@ import { CATEGORIES } from '../data/initialData';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Products({ data, formulasWithCosts, loadData, showToast, searchQuery }) {
+export default function Products({ data, formulasWithCosts, loadData, showToast, searchQuery, user }) {
   const [filter, setFilter] = useState('all');
   const [editModal, setEditModal] = useState(null);
   const [form, setForm] = useState({ price: 0, stock: 0 });

@@ -4,7 +4,7 @@ import { UNITS } from '../data/initialData';
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Inventory({ data, loadData, showToast, searchQuery }) {
+export default function Inventory({ data, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ name: '', unit: 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '' });
