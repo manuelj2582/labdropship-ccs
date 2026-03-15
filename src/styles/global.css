@@ -1,0 +1,91 @@
+:root {
+  --bg-primary: #060A13;
+  --bg-secondary: #0C1222;
+  --bg-card: #111B2E;
+  --bg-card-hover: #152038;
+  --bg-input: #0D1526;
+  --border: #1A2744;
+  --border-light: #243352;
+  --text-primary: #E8EDF5;
+  --text-secondary: #8B9DC3;
+  --text-dim: #4F6289;
+  --accent: #6C72FF;
+  --accent-hover: #8488FF;
+  --accent-bg: rgba(108, 114, 255, 0.08);
+  --accent-bg-strong: rgba(108, 114, 255, 0.15);
+  --success: #00D68F;
+  --success-bg: rgba(0, 214, 143, 0.1);
+  --warning: #FFB547;
+  --warning-bg: rgba(255, 181, 71, 0.1);
+  --danger: #FF5A65;
+  --danger-bg: rgba(255, 90, 101, 0.1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.15);
+  --shadow-modal: 0 8px 40px rgba(0,0,0,0.5);
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition: 0.15s ease;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modal-animate {
+  animation: slideIn 0.25s ease forwards;
+}
