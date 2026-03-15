@@ -20,7 +20,7 @@ import * as db from './lib/db';
 function AppContent() {
   const { user, loading } = useAuth();
   const [data, setData] = useState({
-    rawMaterials: [], formulas: [], products: [],
+    rawMaterials: [], formulas: [], products: [], presentations: [],
     sales: [], suppliers: [], clients: [], productionLogs: [], categories: [],
   });
   const getInitialView = () => {
@@ -87,12 +87,12 @@ function AppContent() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
-      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats] = await Promise.all([
+      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres] = await Promise.all([
         db.rawMaterials.getAll(), db.formulas.getAll(), db.products.getAll(),
         db.sales.getAll(), db.suppliers.getAll(), db.clients.getAll(), db.productionLog.getAll(),
-        db.categories.getAll(),
+        db.categories.getAll(), db.presentations.getAll(),
       ]);
-      setData({ rawMaterials: rawMats, formulas, products: prods, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats });
+      setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats });
     } catch (err) {
       console.error('Error loading:', err);
       showToast('Error cargando datos: ' + err.message, 'error');

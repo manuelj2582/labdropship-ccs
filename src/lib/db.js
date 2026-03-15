@@ -115,6 +115,8 @@ export const formulas = {
     const { data: f, error: fErr } = await supabase.from('formulas').insert({
       name: formula.name, category: formula.category,
       yield_amount: formula.yieldAmount, yield_unit: formula.yieldUnit,
+      base_amount: formula.baseAmount || formula.yieldAmount,
+      base_unit: formula.baseUnit || formula.yieldUnit,
       sale_price: formula.salePrice,
     }).select().single();
     if (fErr) throw fErr;
@@ -310,5 +312,73 @@ export const categories = {
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw error;
     await activityLog.log(user, 'eliminar', 'categoria', id, name);
+  },
+};
+
+// ── Presentations ──
+export const presentations = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('presentations')
+      .select('*, envase:raw_materials(id, name, cost, unit)')
+      .order('formula_id').order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  getByFormula: async (formulaId) => {
+    const { data, error } = await supabase.from('presentations')
+      .select('*, envase:raw_materials(id, name, cost, unit)')
+      .eq('formula_id', formulaId).order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  create: async (presentation, user) => {
+    const { data, error } = await supabase.from('presentations').insert(presentation).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'crear', 'presentacion', data.id, data.name, { amount: presentation.amount, unit: presentation.unit });
+    return data;
+  },
+  update: async (id, updates, user) => {
+    const { data, error } = await supabase.from('presentations').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'editar', 'presentacion', data.id, data.name, updates);
+    return data;
+  },
+  delete: async (id, name, user) => {
+    const { error } = await supabase.from('presentations').delete().eq('id', id);
+    if (error) throw error;
+    await activityLog.log(user, 'eliminar', 'presentacion', id, name);
+  },
+};
+
+// ── Presentations ──
+export const presentations = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('presentations')
+      .select('*').order('formula_id').order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  getByFormula: async (formulaId) => {
+    const { data, error } = await supabase.from('presentations')
+      .select('*').eq('formula_id', formulaId).order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  create: async (presentation, user) => {
+    const { data, error } = await supabase.from('presentations').insert(presentation).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'crear', 'presentacion', data.id, data.name, { amount: presentation.amount, unit: presentation.unit });
+    return data;
+  },
+  update: async (id, updates, user) => {
+    const { data, error } = await supabase.from('presentations').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    await activityLog.log(user, 'editar', 'presentacion', data.id, data.name, updates);
+    return data;
+  },
+  delete: async (id, name, user) => {
+    const { error } = await supabase.from('presentations').delete().eq('id', id);
+    if (error) throw error;
+    await activityLog.log(user, 'eliminar', 'presentacion', id, name);
   },
 };
