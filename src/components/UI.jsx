@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 // ── Styles ──
 const s = {
@@ -123,16 +124,32 @@ export function Textarea({ label, value, onChange, placeholder, rows = 3 }) {
 }
 
 export function Modal({ title, children, onClose, wide }) {
-  return (
+  // Portal: render modal at body level so it's never clipped
+  const [container] = React.useState(() => {
+    const el = document.createElement('div');
+    el.id = 'modal-portal';
+    return el;
+  });
+
+  React.useEffect(() => {
+    document.body.appendChild(container);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.removeChild(container);
+      document.body.style.overflow = '';
+    };
+  }, [container]);
+
+  return ReactDOM.createPortal(
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999,
       backdropFilter: 'blur(4px)',
     }} onClick={onClose}>
-      <div className="modal-animate" onClick={e => e.stopPropagation()} style={{
+      <div className="modal-animate modal-inner" onClick={e => e.stopPropagation()} style={{
         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
         borderRadius: 'var(--radius-xl)', padding: 28,
-        width: wide ? 640 : 480, maxHeight: '82vh', overflow: 'auto',
+        width: wide ? 640 : 480, maxHeight: '85vh', overflow: 'auto',
         boxShadow: 'var(--shadow-modal)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -146,7 +163,8 @@ export function Modal({ title, children, onClose, wide }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    container
   );
 }
 
