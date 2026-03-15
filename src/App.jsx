@@ -22,7 +22,26 @@ function AppContent() {
     rawMaterials: [], formulas: [], products: [],
     sales: [], suppliers: [], clients: [], productionLogs: [],
   });
-  const [view, setView] = useState('dashboard');
+  const getInitialView = () => {
+    const hash = window.location.hash.replace('#', '');
+    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','history','activity','reports'];
+    return validViews.includes(hash) ? hash : 'dashboard';
+  };
+  const [view, setViewState] = useState(getInitialView);
+  const setView = (v) => {
+    window.location.hash = v;
+    setViewState(v);
+  };
+
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setViewState(hash);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [toast, setToast] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
