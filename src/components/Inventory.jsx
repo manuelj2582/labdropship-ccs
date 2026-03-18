@@ -158,8 +158,9 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
             <Input label="Stock Actual" type="number" value={form.stock} onChange={v => setForm({ ...form, stock: +v })} />
             <Input label="Stock Mínimo" type="number" value={form.min_stock} onChange={v => setForm({ ...form, min_stock: +v })} />
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Input label="Costo por unidad ($)" type="number" value={form.cost} onChange={v => setForm({ ...form, cost: +v })} step="0.01" />
+            <Input label={`Costo por ${form.unit || 'unidad'} ($)`} type="number" value={form.cost} onChange={v => setForm({ ...form, cost: +v })} step="0.0001" placeholder="0.00" />
             <Select label="Proveedor" value={form.supplier_id} options={data.suppliers.map(s => ({ value: s.id, label: s.name }))} onChange={v => setForm({ ...form, supplier_id: v })} placeholder="Opcional" />
           </div>
           <ModalActions onCancel={() => setModal(false)} onConfirm={save} confirmLabel={saving ? 'Guardando...' : editId ? 'Actualizar' : 'Agregar'} confirmDisabled={saving} />
