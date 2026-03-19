@@ -12,6 +12,7 @@ const MATERIAL_TYPES = [
 
 export default function Inventory({ data, loadData, showToast, searchQuery, user }) {
   const [modal, setModal] = useState(false);
+  const [detailId, setDetailId] = useState(null);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('materia_prima');
@@ -26,6 +27,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
   const openEdit = (m) => {
     setForm({ name: m.name, unit: m.unit, stock: m.stock, min_stock: m.min_stock, cost: m.cost, supplier_id: m.supplier_id || '', material_type: m.material_type || 'materia_prima' });
     setEditId(m.id);
+    setDetailId(null);
     setModal(true);
   };
 
@@ -48,16 +50,45 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
   };
 
   const remove = async (id, name) => {
+    if (!confirm(`¿Eliminar "${name}"?`)) return;
     try {
       await db.rawMaterials.delete(id, name, user);
       await loadData();
       showToast('Material eliminado');
+      setDetailId(null);
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  };
+
+  // Where is this material used?
+  const getUsage = (materialId) => {
+    // As ingredient in formulas
+    const inFormulas = data.formulas.filter(f =>
+      (f.ingredients || []).some(ing => ing.material_id === materialId)
+    ).map(f => ({ type: 'formula', name: f.name, id: f.id }));
+
+    // As envase in presentations
+    const inPresentations = (data.presentations || []).filter(p => p.envase_id === materialId)
+      .map(p => {
+        const formula = data.formulas.find(f => f.id === p.formula_id);
+        return { type: 'presentacion', name: p.name, formulaName: formula?.name, id: p.id };
+      });
+
+    return { inFormulas, inPresentations, total: inFormulas.length + inPresentations.length };
+  };
+
+  // Supplier prices for a material
+  const getPrices = (materialId) => {
+    return (data.supplierPrices || [])
+      .filter(sp => sp.material_id === materialId)
+      .sort((a, b) => a.cost_per_unit - b.cost_per_unit);
   };
 
   const materialsOfType = useMemo(() => {
     let mats = data.rawMaterials.filter(m => (m.material_type || 'materia_prima') === activeTab);
-    if (searchQuery) mats = mats.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (searchQuery) mats = mats.filter(m =>
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
     return mats;
   }, [data.rawMaterials, activeTab, searchQuery]);
 
@@ -68,6 +99,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
   }, [data.rawMaterials]);
 
   const totalValue = materialsOfType.reduce((s, m) => s + m.stock * m.cost, 0);
+  const detailMaterial = detailId ? data.rawMaterials.find(m => m.id === detailId) : null;
 
   return (
     <div className="animate-in">
@@ -85,11 +117,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
           }}>
             <span style={{ fontSize: 16 }}>{t.icon}</span>
             {t.label}
-            <span style={{
-              padding: '2px 8px', borderRadius: 20, fontSize: 11,
-              background: activeTab === t.id ? 'var(--accent-bg)' : 'var(--bg-input)',
-              fontFamily: 'var(--font-mono)',
-            }}>{typeCounts[t.id] || 0}</span>
+            <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 11, background: activeTab === t.id ? 'var(--accent-bg)' : 'var(--bg-input)', fontFamily: 'var(--font-mono)' }}>{typeCounts[t.id] || 0}</span>
           </button>
         ))}
       </div>
@@ -101,34 +129,46 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
         <Button onClick={openAdd}>+ Agregar {MATERIAL_TYPES.find(t => t.id === activeTab)?.label}</Button>
       </div>
 
+      {/* Table */}
       <Card>
         <table style={tableStyle}>
           <thead>
             <tr>
-              {['Nombre', 'Proveedor', 'Stock', 'Mínimo', 'Estado', 'Costo/ud', 'Valor', ''].map(h => (
+              {['Nombre', 'Proveedor', 'Stock', 'Estado', 'Costo/ud', 'Usado en', ''].map(h => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {materialsOfType.map(m => {
-              const isLow = m.stock <= m.min_stock;
+              const isLow = m.stock <= m.min_stock && m.min_stock > 0;
+              const usage = getUsage(m.id);
+              const prices = getPrices(m.id);
               return (
-                <tr key={m.id} style={{ background: isLow ? 'rgba(255,90,101,0.03)' : 'transparent' }}>
-                  <td style={{ ...tdStyle, fontWeight: 600 }}>
-                    {m.name}
-                    {activeTab === 'envase' && m.unit && <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 6 }}>({m.unit})</span>}
+                <tr key={m.id} onClick={() => setDetailId(m.id)} style={{ background: isLow ? 'rgba(255,90,101,0.03)' : 'transparent', cursor: 'pointer', transition: '0.1s' }}>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>{m.name}</td>
+                  <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {m.supplier?.name || '—'}
+                    {prices.length > 1 && <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>+{prices.length} cot.</span>}
                   </td>
-                  <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-secondary)' }}>{m.supplier?.name || '—'}</td>
                   <td style={tdStyle}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{Number(m.stock).toLocaleString()}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 4 }}>{m.unit}</span>
                   </td>
-                  <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{m.min_stock} {m.unit}</td>
                   <td style={tdStyle}><StatusBadge status={isLow ? 'bajo' : 'ok'} /></td>
-                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>{fmt(m.cost)}</td>
-                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', color: 'var(--accent)', fontWeight: 600 }}>{fmt(m.stock * m.cost)}</td>
+                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>{fmt(m.cost)}/{m.unit}</td>
                   <td style={tdStyle}>
+                    {usage.total > 0 ? (
+                      <span style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
+                        {usage.inFormulas.length > 0 && `${usage.inFormulas.length} fórmula(s)`}
+                        {usage.inFormulas.length > 0 && usage.inPresentations.length > 0 && ' · '}
+                        {usage.inPresentations.length > 0 && `${usage.inPresentations.length} envase(s)`}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Sin usar</span>
+                    )}
+                  </td>
+                  <td style={tdStyle} onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>✎</Button>
                       <Button variant="danger" size="sm" onClick={() => remove(m.id, m.name)}>✕</Button>
@@ -138,7 +178,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               );
             })}
             {materialsOfType.length === 0 && (
-              <tr><td colSpan={8} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-dim)', padding: 40 }}>
+              <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-dim)', padding: 40 }}>
                 No hay {MATERIAL_TYPES.find(t => t.id === activeTab)?.label.toLowerCase()} registrados
               </td></tr>
             )}
@@ -146,6 +186,107 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
         </table>
       </Card>
 
+      {/* ═══ DETAIL MODAL ═══ */}
+      {detailMaterial && (() => {
+        const usage = getUsage(detailMaterial.id);
+        const prices = getPrices(detailMaterial.id);
+        const isLow = detailMaterial.stock <= detailMaterial.min_stock && detailMaterial.min_stock > 0;
+        return (
+          <Modal title={detailMaterial.name} onClose={() => setDetailId(null)} wide>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  background: detailMaterial.material_type === 'envase' ? 'rgba(96,165,250,0.1)' : detailMaterial.material_type === 'etiqueta' ? 'rgba(251,191,36,0.1)' : 'rgba(167,139,250,0.1)',
+                  color: detailMaterial.material_type === 'envase' ? '#60A5FA' : detailMaterial.material_type === 'etiqueta' ? '#FBBF24' : '#A78BFA',
+                }}>{MATERIAL_TYPES.find(t => t.id === (detailMaterial.material_type || 'materia_prima'))?.icon} {detailMaterial.material_type || 'materia_prima'}</span>
+                {isLow && <StatusBadge status="bajo" />}
+                <Button variant="ghost" size="sm" onClick={() => openEdit(detailMaterial)}>✎ Editar</Button>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>{fmt(detailMaterial.cost)}<span style={{ fontSize: 12, color: 'var(--text-dim)' }}>/{detailMaterial.unit}</span></div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Stock: {Number(detailMaterial.stock).toLocaleString()} {detailMaterial.unit}</div>
+              </div>
+            </div>
+
+            {/* Where is it used */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                📌 USADO EN ({usage.total})
+              </div>
+              {usage.total === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>Este material no está siendo usado en ninguna fórmula o presentación</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {usage.inFormulas.map(f => (
+                    <div key={f.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)',
+                    }}>
+                      <span style={{ fontSize: 14 }}>🧪</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{f.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Como ingrediente en fórmula</div>
+                      </div>
+                    </div>
+                  ))}
+                  {usage.inPresentations.map(p => (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)',
+                    }}>
+                      <span style={{ fontSize: 14 }}>🫙</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Envase de {p.formulaName || 'fórmula'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Supplier prices */}
+            <div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                💲 PRECIOS DE PROVEEDORES ({prices.length})
+              </div>
+              {prices.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>Sin cotizaciones — ve al módulo Cotizador para agregar precios</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {prices.map((p, i) => (
+                    <div key={p.id} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                      background: i === 0 ? 'var(--success-bg)' : 'var(--bg-input)',
+                      border: `1px solid ${i === 0 ? 'rgba(0,214,143,0.2)' : 'var(--border)'}`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {i === 0 && prices.length > 1 && <span>🏆</span>}
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{p.supplier?.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                            ${Number(p.price).toFixed(2)} por {p.unit_amount}{p.unit}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-mono)',
+                        color: i === 0 ? 'var(--success)' : 'var(--text-primary)',
+                      }}>
+                        {fmt(p.cost_per_unit)}<span style={{ fontSize: 10, color: 'var(--text-dim)' }}>/{detailMaterial.unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {/* ═══ ADD/EDIT MODAL ═══ */}
       {modal && (
         <Modal title={editId ? 'Editar Material' : `Agregar ${MATERIAL_TYPES.find(t => t.id === form.material_type)?.label || 'Material'}`} onClose={() => setModal(false)}>
           <Input label="Nombre" value={form.name} onChange={v => setForm({ ...form, name: v })}
@@ -158,7 +299,6 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
             <Input label="Stock Actual" type="number" value={form.stock} onChange={v => setForm({ ...form, stock: +v })} />
             <Input label="Stock Mínimo" type="number" value={form.min_stock} onChange={v => setForm({ ...form, min_stock: +v })} />
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Input label={`Costo por ${form.unit || 'unidad'} ($)`} type="number" value={form.cost} onChange={v => setForm({ ...form, cost: +v })} step="0.0001" placeholder="0.00" />
             <Select label="Proveedor" value={form.supplier_id} options={data.suppliers.map(s => ({ value: s.id, label: s.name }))} onChange={v => setForm({ ...form, supplier_id: v })} placeholder="Opcional" />
