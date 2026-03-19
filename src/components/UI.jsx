@@ -17,9 +17,9 @@ const s = {
   },
 };
 
-export function Card({ title, children, span, className, style }) {
+export function Card({ title, children, span, className, style, onClick }) {
   return (
-    <div className={className} style={{
+    <div className={className} onClick={onClick} style={{
       background: 'var(--bg-card)', border: '1px solid var(--border)',
       borderRadius: 'var(--radius-lg)', padding: 20,
       boxShadow: 'var(--shadow-card)',
