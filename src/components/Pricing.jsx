@@ -7,6 +7,9 @@ export default function Pricing({ data, loadData, showToast, searchQuery, user }
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [addModal, setAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [supplierFilter, setSupplierFilter] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all'); // all, with_prices, without_prices
   const [form, setForm] = useState({ supplier_id: '', price: 0, unit_amount: 1, unit: 'g', notes: '' });
 
   const prices = data.supplierPrices || [];
@@ -35,6 +38,10 @@ export default function Pricing({ data, loadData, showToast, searchQuery, user }
   }, [data.rawMaterials, pricesByMaterial]);
 
   let filtered = materialsWithPrices;
+  if (typeFilter !== 'all') filtered = filtered.filter(m => (m.material_type || 'materia_prima') === typeFilter);
+  if (supplierFilter !== 'all') filtered = filtered.filter(m => m.prices.some(p => p.supplier_id === supplierFilter));
+  if (priceFilter === 'with_prices') filtered = filtered.filter(m => m.prices.length > 0);
+  if (priceFilter === 'without_prices') filtered = filtered.filter(m => m.prices.length === 0);
   if (searchQuery) filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const openAddPrice = (materialId) => {
@@ -91,9 +98,47 @@ export default function Pricing({ data, loadData, showToast, searchQuery, user }
 
   return (
     <div className="animate-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          Compara precios de proveedores para cada material · {prices.length} cotizaciones registradas
+      {/* Type filters */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {[
+          { id: 'all', label: 'Todos', icon: '📋' },
+          { id: 'materia_prima', label: 'Materia Prima', icon: '🧪' },
+          { id: 'envase', label: 'Envases', icon: '🫙' },
+          { id: 'etiqueta', label: 'Etiquetas', icon: '🏷️' },
+        ].map(t => (
+          <Button key={t.id} variant={typeFilter === t.id ? 'primary' : 'muted'} size="sm"
+            onClick={() => setTypeFilter(t.id)}>
+            {t.icon} {t.label} ({t.id === 'all' ? materialsWithPrices.length : materialsWithPrices.filter(m => (m.material_type || 'materia_prima') === t.id).length})
+          </Button>
+        ))}
+      </div>
+
+      {/* Secondary filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[
+            { id: 'all', label: 'Todos' },
+            { id: 'with_prices', label: '✓ Con cotizaciones' },
+            { id: 'without_prices', label: '○ Sin cotizar' },
+          ].map(f => (
+            <Button key={f.id} variant={priceFilter === f.id ? 'primary' : 'muted'} size="sm"
+              onClick={() => setPriceFilter(f.id)}>{f.label}</Button>
+          ))}
+        </div>
+
+        {data.suppliers.length > 0 && (
+          <select value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)} style={{
+            padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontSize: 12,
+            fontFamily: 'var(--font-body)', cursor: 'pointer', outline: 'none',
+          }}>
+            <option value="all">Todos los proveedores</option>
+            {data.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        )}
+
+        <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 'auto' }}>
+          {filtered.length} materiales · {prices.length} cotizaciones
         </span>
       </div>
 

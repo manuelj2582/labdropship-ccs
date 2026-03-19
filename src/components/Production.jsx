@@ -3,7 +3,7 @@ import { Card, Button, Modal, ModalActions, Select, Input, CategoryTag, tableSty
 import * as db from '../lib/db';
 import { fmt } from '../utils';
 
-export default function Production({ data, formulasWithCosts, loadData, showToast, user }) {
+export default function Production({ data, formulasWithCosts, loadData, showToast, user, searchQuery }) {
   const [modal, setModal] = useState(false);
   const [presId, setPresId] = useState('');
   const [batches, setBatches] = useState(1);
@@ -13,11 +13,13 @@ export default function Production({ data, formulasWithCosts, loadData, showToas
 
   // Build presentation options grouped by formula
   const presOptions = useMemo(() => {
-    return allPresentations.map(p => {
+    let result = allPresentations.map(p => {
       const formula = formulasWithCosts.find(f => f.id === p.formula_id);
       return { ...p, _formula: formula };
     }).filter(p => p._formula);
-  }, [allPresentations, formulasWithCosts]);
+    if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p._formula?.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    return result;
+  }, [allPresentations, formulasWithCosts, searchQuery]);
 
   const selectedPres = presOptions.find(p => p.id === presId);
   const formula = selectedPres?._formula;

@@ -5,7 +5,7 @@ import * as db from '../lib/db';
 const ICON_OPTIONS = ['💧','🚗','🐾','🏠','✨','🧴','🧹','🌿','🔧','💊','🧪','🎨','👶','🏋️','🍳','📱','💅','🪥','🧽','🫧','🕯️','🧼'];
 const COLOR_OPTIONS = ['#A78BFA','#60A5FA','#34D399','#FBBF24','#F472B6','#FB923C','#38BDF8','#4ADE80','#C084FC','#F87171','#2DD4BF','#A3E635','#E879F9','#818CF8'];
 
-export default function Categories({ data, loadData, showToast, user }) {
+export default function Categories({ data, loadData, showToast, user, searchQuery }) {
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -65,7 +65,8 @@ export default function Categories({ data, loadData, showToast, user }) {
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
-  const cats = data.categories || [];
+  let cats = data.categories || [];
+  if (searchQuery) cats = cats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.slug.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="animate-in">
