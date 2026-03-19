@@ -13,6 +13,7 @@ import Reports from './components/Reports';
 import ProductionHistory from './components/ProductionHistory';
 import ActivityLog from './components/ActivityLog';
 import Categories from './components/Categories';
+import Pricing from './components/Pricing';
 import { Button } from './components/UI';
 import { auth, preferences } from './lib/db';
 import * as db from './lib/db';
@@ -21,11 +22,11 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [data, setData] = useState({
     rawMaterials: [], formulas: [], products: [], presentations: [],
-    sales: [], suppliers: [], clients: [], productionLogs: [], categories: [],
+    sales: [], suppliers: [], clients: [], productionLogs: [], categories: [], supplierPrices: [],
   });
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','categories','history','activity','reports'];
+    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','pricing','categories','history','activity','reports'];
     return validViews.includes(hash) ? hash : 'dashboard';
   };
   const [view, setViewState] = useState(getInitialView);
@@ -87,12 +88,12 @@ function AppContent() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
-      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres] = await Promise.all([
+      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres, sPrices] = await Promise.all([
         db.rawMaterials.getAll(), db.formulas.getAll(), db.products.getAll(),
         db.sales.getAll(), db.suppliers.getAll(), db.clients.getAll(), db.productionLog.getAll(),
-        db.categories.getAll(), db.presentations.getAll(),
+        db.categories.getAll(), db.presentations.getAll(), db.supplierPrices.getAll(),
       ]);
-      setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats });
+      setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats, supplierPrices: sPrices });
     } catch (err) {
       console.error('Error loading:', err);
       showToast('Error cargando datos: ' + err.message, 'error');
@@ -129,7 +130,7 @@ function AppContent() {
     const views = {
       dashboard: Dashboard, inventory: Inventory, formulas: Formulas, production: Production,
       products: Products, sales: Sales, clients: Clients, suppliers: Suppliers,
-      categories: Categories, reports: Reports, history: ProductionHistory, activity: ActivityLog,
+      pricing: Pricing, categories: Categories, reports: Reports, history: ProductionHistory, activity: ActivityLog,
     };
     const View = views[view] || Dashboard;
     return <View {...props} />;

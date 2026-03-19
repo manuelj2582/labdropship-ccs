@@ -174,13 +174,23 @@ export default function Catalog() {
                   style={{
                     background: isHovered ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
                     border: `1px solid ${isHovered ? 'rgba(108,114,255,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                    borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden',
+                    borderRadius: 16, position: 'relative', overflow: 'hidden',
                     transition: '0.25s ease', cursor: 'default',
                     transform: isHovered ? 'translateY(-4px)' : 'none',
                     boxShadow: isHovered ? '0 12px 40px rgba(0,0,0,0.3)' : 'none',
                   }}>
+                  {/* Product image */}
+                  <div style={{
+                    height: 180,
+                    background: product.image_url ? `url(${product.image_url}) center/cover` : `linear-gradient(135deg, ${cat?.color || '#6C72FF'}12, ${cat?.color || '#6C72FF'}06)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}>
+                    {!product.image_url && <span style={{ fontSize: 56, opacity: 0.12 }}>{cat?.icon || '📦'}</span>}
+                  </div>
+
+                  <div style={{ padding: 20 }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: cat?.color || '#6C72FF', opacity: isHovered ? 1 : 0.4, transition: '0.25s' }} />
-                  <div style={{ position: 'absolute', bottom: -15, right: -10, fontSize: 80, opacity: 0.03, pointerEvents: 'none' }}>{cat?.icon}</div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                     <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${cat?.color}15`, color: cat?.color, border: `1px solid ${cat?.color}25` }}>
@@ -237,6 +247,7 @@ export default function Catalog() {
                       )}
                     </div>
                   </div>
+                  </div>{/* close padding wrapper */}
                 </div>
               );
             })}

@@ -182,6 +182,27 @@ export const products = {
     const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', id);
     if (error) throw error;
   },
+  uploadImage: async (productId, file) => {
+    const ext = file.name.split('.').pop();
+    const path = `${productId}.${ext}`;
+    // Remove old image if exists
+    await supabase.storage.from('product-images').remove([path]);
+    // Upload new
+    const { error: upErr } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
+    const imageUrl = urlData.publicUrl + '?t=' + Date.now(); // cache bust
+    await supabase.from('products').update({ image_url: imageUrl }).eq('id', productId);
+    return imageUrl;
+  },
+  removeImage: async (productId) => {
+    const { data: prod } = await supabase.from('products').select('image_url').eq('id', productId).single();
+    if (prod?.image_url) {
+      const path = prod.image_url.split('/product-images/')[1]?.split('?')[0];
+      if (path) await supabase.storage.from('product-images').remove([path]);
+    }
+    await supabase.from('products').update({ image_url: null }).eq('id', productId);
+  },
 };
 
 // ── Clients ──
@@ -395,5 +416,45 @@ export const presentations = {
     const { error } = await supabase.from('presentations').delete().eq('id', id);
     if (error) throw error;
     await activityLog.log(user, 'eliminar', 'presentacion', id, name);
+  },
+};
+
+// ── Supplier Prices ──
+export const supplierPrices = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('supplier_prices')
+      .select('*, supplier:suppliers(id, name, whatsapp, contact), material:raw_materials(id, name, unit)')
+      .order('material_id');
+    if (error) throw error;
+    return data;
+  },
+  getByMaterial: async (materialId) => {
+    const { data, error } = await supabase.from('supplier_prices')
+      .select('*, supplier:suppliers(id, name, whatsapp, contact)')
+      .eq('material_id', materialId)
+      .order('cost_per_unit');
+    if (error) throw error;
+    return data;
+  },
+  upsert: async (entry, user) => {
+    const { data, error } = await supabase.from('supplier_prices')
+      .upsert({
+        material_id: entry.material_id,
+        supplier_id: entry.supplier_id,
+        price: entry.price,
+        unit_amount: entry.unit_amount,
+        unit: entry.unit,
+        cost_per_unit: entry.unit_amount > 0 ? entry.price / entry.unit_amount : 0,
+        notes: entry.notes || null,
+        last_updated: new Date().toISOString(),
+      }, { onConflict: 'material_id,supplier_id' })
+      .select('*, supplier:suppliers(id, name)').single();
+    if (error) throw error;
+    await activityLog.log(user, 'cotizar', 'precio_proveedor', data.id, `${data.supplier?.name}`, { precio: entry.price, cantidad: entry.unit_amount, unit: entry.unit });
+    return data;
+  },
+  delete: async (id, user) => {
+    const { error } = await supabase.from('supplier_prices').delete().eq('id', id);
+    if (error) throw error;
   },
 };

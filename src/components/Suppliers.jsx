@@ -7,10 +7,10 @@ export default function Suppliers({ data, loadData, showToast, searchQuery, user
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', contact: '', email: '', rif: '', address: '' });
+  const [form, setForm] = useState({ name: '', contact: '', email: '', rif: '', address: '', whatsapp: '' });
 
-  const openAdd = () => { setForm({ name: '', contact: '', email: '', rif: '', address: '' }); setEditId(null); setModal(true); };
-  const openEdit = (s) => { setForm({ name: s.name, contact: s.contact, email: s.email, rif: s.rif, address: s.address || '' }); setEditId(s.id); setModal(true); };
+  const openAdd = () => { setForm({ name: '', contact: '', email: '', rif: '', address: '', whatsapp: '' }); setEditId(null); setModal(true); };
+  const openEdit = (s) => { setForm({ name: s.name, contact: s.contact, email: s.email, rif: s.rif, address: s.address || '', whatsapp: s.whatsapp || '' }); setEditId(s.id); setModal(true); };
 
   const save = async () => {
     if (!form.name) return;
@@ -93,6 +93,7 @@ export default function Suppliers({ data, loadData, showToast, searchQuery, user
             <Input label="Email" value={form.email} onChange={v => setForm({...form, email: v})} type="email" />
           </div>
           <Input label="Dirección" value={form.address} onChange={v => setForm({...form, address: v})} />
+          <Input label="WhatsApp (con código de país, ej: 584121234567)" value={form.whatsapp} onChange={v => setForm({...form, whatsapp: v})} placeholder="584121234567" />
           <ModalActions onCancel={() => setModal(false)} onConfirm={save} confirmLabel={saving ? 'Guardando...' : editId ? 'Actualizar' : 'Agregar'} confirmDisabled={saving} />
         </Modal>
       )}

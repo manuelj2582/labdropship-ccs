@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { id: 'sales', label: 'Ventas Mayor', icon: '💰' },
   { id: 'clients', label: 'Clientes', icon: '👥' },
   { id: 'suppliers', label: 'Proveedores', icon: '🚚' },
+  { id: 'pricing', label: 'Cotizador', icon: '💲' },
   { id: 'categories', label: 'Categorías', icon: '🏷️' },
   { id: 'history', label: 'Historial Prod.', icon: '📋' },
   { id: 'activity', label: 'Log Actividad', icon: '🕐' },
