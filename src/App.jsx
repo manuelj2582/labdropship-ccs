@@ -88,11 +88,13 @@ function AppContent() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
-      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres, sPrices] = await Promise.all([
+      const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres] = await Promise.all([
         db.rawMaterials.getAll(), db.formulas.getAll(), db.products.getAll(),
         db.sales.getAll(), db.suppliers.getAll(), db.clients.getAll(), db.productionLog.getAll(),
-        db.categories.getAll(), db.presentations.getAll(), db.supplierPrices.getAll(),
+        db.categories.getAll(), db.presentations.getAll(),
       ]);
+      let sPrices = [];
+      try { sPrices = await db.supplierPrices.getAll(); } catch (e) { console.warn('supplier_prices table not found, run migration v3.8'); }
       setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats, supplierPrices: sPrices });
     } catch (err) {
       console.error('Error loading:', err);
