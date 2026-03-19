@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { id: 'clients', label: 'Clientes', icon: '👥' },
   { id: 'suppliers', label: 'Proveedores', icon: '🚚' },
   { id: 'pricing', label: 'Cotizador', icon: '💲' },
-  { id: 'import', label: 'Importar Lista', icon: '📥' },
   { id: 'categories', label: 'Categorías', icon: '🏷️' },
   { id: 'history', label: 'Historial Prod.', icon: '📋' },
   { id: 'activity', label: 'Log Actividad', icon: '🕐' },
