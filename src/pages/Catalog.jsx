@@ -179,10 +179,11 @@ export default function Catalog() {
                   {/* Product image */}
                   <div style={{
                     height: 180,
-                    background: product.image_url ? `url(${product.image_url}) center/cover` : `linear-gradient(135deg, ${cat?.color || '#6C72FF'}12, ${cat?.color || '#6C72FF'}06)`,
+                    background: product.image_url ? 'rgba(255,255,255,0.02)' : `linear-gradient(135deg, ${cat?.color || '#6C72FF'}12, ${cat?.color || '#6C72FF'}06)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
                   }}>
+                    {product.image_url && <img src={product.image_url} alt={product.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: 8 }} />}
                     {!product.image_url && <span style={{ fontSize: 56, opacity: 0.12 }}>{cat?.icon || '📦'}</span>}
                   </div>
 

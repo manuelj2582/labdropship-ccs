@@ -126,10 +126,12 @@ export default function Products({ data, formulasWithCosts, loadData, showToast,
             <Card key={p.id} style={{ position: 'relative', overflow: 'hidden', padding: 0 }}>
               {/* Image */}
               <div style={{
-                height: 160, background: p.image_url ? `url(${p.image_url}) center/cover` : `linear-gradient(135deg, ${cat?.color || '#6C72FF'}15, ${cat?.color || '#6C72FF'}08)`,
+                height: 180, 
+                background: p.image_url ? `var(--bg-input)` : `linear-gradient(135deg, ${cat?.color || '#6C72FF'}15, ${cat?.color || '#6C72FF'}08)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 borderBottom: '1px solid var(--border)', position: 'relative',
               }}>
+                {p.image_url && <img src={p.image_url} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: 8 }} />}
                 {!p.image_url && <span style={{ fontSize: 48, opacity: 0.15 }}>{cat?.icon || '📦'}</span>}
                 {/* Image actions overlay */}
                 <div style={{
