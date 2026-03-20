@@ -19,13 +19,13 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
   const [form, setForm] = useState({ name: '', unit: 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: 'materia_prima' });
 
   const openAdd = () => {
-    setForm({ name: '', unit: activeTab === 'envase' ? 'unidad' : activeTab === 'etiqueta' ? 'unidad' : 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: activeTab });
+    setForm({ name: '', unit: activeTab === 'envase' ? 'unidad' : activeTab === 'etiqueta' ? 'unidad' : 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: activeTab, volume: '', volume_unit: 'ml' });
     setEditId(null);
     setModal(true);
   };
 
   const openEdit = (m) => {
-    setForm({ name: m.name, unit: m.unit, stock: m.stock, min_stock: m.min_stock, cost: m.cost, supplier_id: m.supplier_id || '', material_type: m.material_type || 'materia_prima' });
+    setForm({ name: m.name, unit: m.unit, stock: m.stock, min_stock: m.min_stock, cost: m.cost, supplier_id: m.supplier_id || '', material_type: m.material_type || 'materia_prima', volume: m.volume || '', volume_unit: m.volume_unit || 'ml' });
     setEditId(m.id);
     setDetailId(null);
     setModal(true);
@@ -89,6 +89,10 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    // Sort envases by volume
+    if (activeTab === 'envase') {
+      mats.sort((a, b) => (a.volume || 9999) - (b.volume || 9999));
+    }
     return mats;
   }, [data.rawMaterials, activeTab, searchQuery]);
 
@@ -134,7 +138,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
         <table style={tableStyle}>
           <thead>
             <tr>
-              {['Nombre', 'Proveedor', 'Stock', 'Estado', 'Costo/ud', 'Usado en', ''].map(h => (
+              {[...(activeTab === 'envase' ? ['Volumen'] : []), 'Nombre', 'Proveedor', 'Stock', 'Estado', 'Costo/ud', 'Usado en', ''].map(h => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
@@ -146,6 +150,11 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               const prices = getPrices(m.id);
               return (
                 <tr key={m.id} onClick={() => setDetailId(m.id)} style={{ background: isLow ? 'rgba(255,90,101,0.03)' : 'transparent', cursor: 'pointer', transition: '0.1s' }}>
+                  {activeTab === 'envase' && (
+                    <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                      {m.volume ? `${m.volume} ${m.volume_unit || 'ml'}` : '—'}
+                    </td>
+                  )}
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{m.name}</td>
                   <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-secondary)' }}>
                     {m.supplier?.name || '—'}
@@ -178,7 +187,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               );
             })}
             {materialsOfType.length === 0 && (
-              <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-dim)', padding: 40 }}>
+              <tr><td colSpan={activeTab === 'envase' ? 8 : 7} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-dim)', padding: 40 }}>
                 No hay {MATERIAL_TYPES.find(t => t.id === activeTab)?.label.toLowerCase()} registrados
               </td></tr>
             )}
@@ -206,6 +215,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>{fmt(detailMaterial.cost)}<span style={{ fontSize: 12, color: 'var(--text-dim)' }}>/{detailMaterial.unit}</span></div>
                 <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Stock: {Number(detailMaterial.stock).toLocaleString()} {detailMaterial.unit}</div>
+                {detailMaterial.volume && <div style={{ fontSize: 12, color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Volumen: {detailMaterial.volume} {detailMaterial.volume_unit || 'ml'}</div>}
               </div>
             </div>
 
@@ -303,6 +313,12 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
             <Input label={`Costo por ${form.unit || 'unidad'} ($)`} type="number" value={form.cost} onChange={v => setForm({ ...form, cost: +v })} step="0.0001" placeholder="0.00" />
             <Select label="Proveedor" value={form.supplier_id} options={data.suppliers.map(s => ({ value: s.id, label: s.name }))} onChange={v => setForm({ ...form, supplier_id: v })} placeholder="Opcional" />
           </div>
+          {form.material_type === 'envase' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+              <Input label="Volumen del envase" type="number" value={form.volume} onChange={v => setForm({ ...form, volume: +v })} step="0.1" placeholder="Ej: 30, 60, 120..." />
+              <Select label="Unidad" value={form.volume_unit} options={['ml', 'L', 'oz', 'g', 'kg'].map(u => ({ value: u, label: u }))} onChange={v => setForm({ ...form, volume_unit: v })} />
+            </div>
+          )}
           <ModalActions onCancel={() => setModal(false)} onConfirm={save} confirmLabel={saving ? 'Guardando...' : editId ? 'Actualizar' : 'Agregar'} confirmDisabled={saving} />
         </Modal>
       )}
