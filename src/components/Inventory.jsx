@@ -35,7 +35,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
     if (!form.name) return;
     setSaving(true);
     try {
-      const payload = { ...form, cost: form.cost || 0, supplier_id: form.supplier_id || null };
+      const payload = { ...form, cost: form.cost || 0, supplier_id: form.supplier_id || null, volume: form.volume || null, volume_unit: form.volume ? (form.volume_unit || 'ml') : null };
       if (editId) {
         await db.rawMaterials.update(editId, payload, user);
         showToast('Material actualizado');
