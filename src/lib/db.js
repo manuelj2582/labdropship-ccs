@@ -458,3 +458,24 @@ export const supplierPrices = {
     if (error) throw error;
   },
 };
+
+// ── Image Upload ──
+export const images = {
+  upload: async (file, folder = 'products') => {
+    const ext = file.name.split('.').pop();
+    const name = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { data, error } = await supabase.storage.from('product-images').upload(name, file, {
+      cacheControl: '3600', upsert: false,
+    });
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path);
+    return urlData.publicUrl;
+  },
+  delete: async (url) => {
+    if (!url) return;
+    try {
+      const path = url.split('/product-images/')[1];
+      if (path) await supabase.storage.from('product-images').remove([path]);
+    } catch (e) { console.warn('Error deleting image:', e); }
+  },
+};
