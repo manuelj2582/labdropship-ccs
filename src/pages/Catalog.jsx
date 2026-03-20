@@ -108,9 +108,6 @@ export default function Catalog() {
                 background: '#25D366', color: '#fff', textDecoration: 'none',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
               }}>📱 WhatsApp</a>
-              <a href="/" style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: 'rgba(108,114,255,0.1)', color: '#6C72FF', border: '1px solid rgba(108,114,255,0.2)', textDecoration: 'none', fontFamily: "'Outfit', sans-serif" }}>
-                Acceso Interno →
-              </a>
             </div>
           </div>
 
