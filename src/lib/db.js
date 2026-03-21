@@ -479,3 +479,25 @@ export const images = {
     } catch (e) { console.warn('Error deleting image:', e); }
   },
 };
+
+// ── Cost Config ──
+export const costConfig = {
+  get: async () => {
+    const { data, error } = await supabase.from('cost_config').select('*').limit(1).single();
+    if (error && error.code === 'PGRST116') return null;
+    if (error) throw error;
+    return data;
+  },
+  save: async (config) => {
+    const { data: existing } = await supabase.from('cost_config').select('id').limit(1).single();
+    if (existing) {
+      const { data, error } = await supabase.from('cost_config').update({ ...config, updated_at: new Date().toISOString() }).eq('id', existing.id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('cost_config').insert(config).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+};
