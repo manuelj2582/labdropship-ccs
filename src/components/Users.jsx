@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Modal, ModalActions, Input, Select } from './UI';
+import { supabase } from '../lib/supabase';
 import * as db from '../lib/db';
 
 const ROLES = [
@@ -11,6 +12,7 @@ const ROLES = [
 
 export default function Users({ user, showToast }) {
   const [users, setUsers] = useState([]);
+  const [detectedUsers, setDetectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createModal, setCreateModal] = useState(false);
   const [editModal, setEditModal] = useState(null);
@@ -21,7 +23,42 @@ export default function Users({ user, showToast }) {
     try {
       const data = await db.userRoles.getAll();
       setUsers(data);
-    } catch (err) { console.warn('user_roles not available:', err); }
+
+      // Detect existing users from activity_log and user_preferences that aren't in user_roles
+      const registeredIds = new Set(data.map(u => u.user_id));
+      const detected = [];
+
+      // From activity_log
+      const { data: logs } = await supabase.from('activity_log')
+        .select('user_id, user_email')
+        .not('user_id', 'is', null);
+      if (logs) {
+        const seen = new Set();
+        logs.forEach(l => {
+          if (l.user_id && l.user_email && !registeredIds.has(l.user_id) && !seen.has(l.user_id)) {
+            seen.add(l.user_id);
+            detected.push({ user_id: l.user_id, email: l.user_email, source: 'actividad' });
+          }
+        });
+      }
+
+      // From user_preferences
+      const { data: prefs } = await supabase.from('user_preferences').select('user_id');
+      if (prefs) {
+        prefs.forEach(p => {
+          if (p.user_id && !registeredIds.has(p.user_id) && !detected.find(d => d.user_id === p.user_id)) {
+            detected.push({ user_id: p.user_id, email: '(email desconocido)', source: 'preferencias' });
+          }
+        });
+      }
+
+      // Current user if not registered
+      if (user?.id && !registeredIds.has(user.id) && !detected.find(d => d.user_id === user.id)) {
+        detected.push({ user_id: user.id, email: user.email, source: 'sesión actual' });
+      }
+
+      setDetectedUsers(detected);
+    } catch (err) { console.warn('Error loading users:', err); }
     finally { setLoading(false); }
   };
 
@@ -52,6 +89,14 @@ export default function Users({ user, showToast }) {
     finally { setSaving(false); }
   };
 
+  const assignRole = async (userId, email, role, name) => {
+    try {
+      await db.userRoles.setRole(userId, email, role, name || '');
+      showToast(`Rol asignado a "${email}"`);
+      await loadUsers();
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  };
+
   const updateRole = async () => {
     if (!editModal) return;
     setSaving(true);
@@ -66,7 +111,7 @@ export default function Users({ user, showToast }) {
 
   const removeUser = async (u) => {
     if (u.user_id === user?.id) { showToast('No puedes eliminarte a ti mismo', 'error'); return; }
-    if (!confirm(`¿Eliminar el acceso de "${u.email}"? El usuario no podrá iniciar sesión.`)) return;
+    if (!confirm(`¿Eliminar el acceso de "${u.email}"?`)) return;
     try {
       await db.userRoles.delete(u.id);
       showToast(`Acceso de "${u.email}" eliminado`);
@@ -80,7 +125,7 @@ export default function Users({ user, showToast }) {
     <div className="animate-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{users.length} usuarios registrados</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{users.length} usuarios con rol</span>
           {myRole && (
             <span style={{ marginLeft: 12, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'var(--accent-bg)', color: 'var(--accent)' }}>
               Tu rol: {ROLES.find(r => r.id === myRole.role)?.icon} {ROLES.find(r => r.id === myRole.role)?.label}
@@ -89,6 +134,46 @@ export default function Users({ user, showToast }) {
         </div>
         <Button onClick={() => { setForm({ email: '', password: '', name: '', role: 'operator' }); setCreateModal(true); }}>+ Crear Usuario</Button>
       </div>
+
+      {/* Detected users without role */}
+      {detectedUsers.length > 0 && (
+        <Card style={{ marginBottom: 16, border: '1px solid rgba(255,170,0,0.3)' }}>
+          <div style={{ fontSize: 10, color: 'var(--warning)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 10 }}>
+            ⚠️ USUARIOS EXISTENTES SIN ROL ASIGNADO ({detectedUsers.length})
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Estos usuarios se registraron antes. Asígnales un rol o elimínalos desde Supabase.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {detectedUsers.map(d => (
+              <div key={d.user_id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-input)', border: '1px solid var(--border)',
+              }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{d.email}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                    Detectado en: {d.source} · ID: {d.user_id.slice(0, 8)}...
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {ROLES.map(r => (
+                    <button key={r.id} onClick={() => assignRole(d.user_id, d.email, r.id)} style={{
+                      padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)',
+                      background: 'var(--bg-card)', color: 'var(--text-secondary)',
+                      cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                      fontFamily: 'var(--font-body)',
+                    }} title={r.desc}>
+                      {r.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Roles legend */}
       <Card style={{ marginBottom: 16, padding: 14 }}>
@@ -131,7 +216,7 @@ export default function Users({ user, showToast }) {
                         {isMe && <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>(tú)</span>}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{u.email}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{role.label} — {role.desc}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{role.label}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -146,18 +231,14 @@ export default function Users({ user, showToast }) {
             );
           })}
 
-          {users.length === 0 && (
+          {users.length === 0 && !loading && (
             <Card>
               <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-dim)', fontSize: 13 }}>
-                No hay usuarios con roles asignados. Tu cuenta es la primera — créate un rol de Admin.
+                No hay usuarios con roles asignados.
                 <div style={{ marginTop: 12 }}>
-                  <Button size="sm" onClick={async () => {
-                    try {
-                      await db.userRoles.setRole(user.id, user.email, 'admin', 'Administrador');
-                      showToast('Te asignaste como Administrador');
-                      await loadUsers();
-                    } catch (err) { showToast('Error: ' + err.message, 'error'); }
-                  }}>👑 Asignarme como Admin</Button>
+                  <Button size="sm" onClick={() => assignRole(user.id, user.email, 'admin', 'Administrador')}>
+                    👑 Asignarme como Admin
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -193,12 +274,6 @@ export default function Users({ user, showToast }) {
           <Select label="Rol" value={form.role}
             options={ROLES.map(r => ({ value: r.id, label: `${r.icon} ${r.label}` }))}
             onChange={v => setForm({ ...form, role: v })} />
-
-          {form.role && (
-            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-bg)', border: '1px solid rgba(108,114,255,0.15)', fontSize: 12, color: 'var(--accent)', marginTop: 8 }}>
-              {ROLES.find(r => r.id === form.role)?.icon} {ROLES.find(r => r.id === form.role)?.desc}
-            </div>
-          )}
 
           <ModalActions onCancel={() => setEditModal(null)} onConfirm={updateRole}
             confirmLabel={saving ? 'Guardando...' : 'Actualizar Rol'} confirmDisabled={saving} />
