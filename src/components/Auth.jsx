@@ -33,29 +33,19 @@ export function AuthProvider({ children }) {
 }
 
 export function LoginPage() {
-  const [mode, setMode] = useState('login'); // login | register
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     setSubmitting(true);
 
     try {
-      if (mode === 'register') {
-        const { error } = await auth.signUp(email, password);
-        if (error) throw error;
-        setSuccess('Cuenta creada. Revisa tu email para confirmar, o inicia sesión si la confirmación está deshabilitada.');
-        setMode('login');
-      } else {
-        const { error } = await auth.signIn(email, password);
-        if (error) throw error;
-      }
+      const { error } = await auth.signIn(email, password);
+      if (error) throw error;
     } catch (err) {
       setError(err.message === 'Invalid login credentials'
         ? 'Email o contraseña incorrectos'
@@ -94,19 +84,6 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', marginBottom: 24, borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-          {[{ id: 'login', label: 'Iniciar Sesión' }, { id: 'register', label: 'Registrar' }].map(t => (
-            <button key={t.id} onClick={() => { setMode(t.id); setError(''); setSuccess(''); }} style={{
-              flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
-              background: mode === t.id ? 'var(--accent)' : 'var(--bg-card)',
-              color: mode === t.id ? '#fff' : 'var(--text-dim)',
-              fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-              transition: 'var(--transition)',
-            }}>{t.label}</button>
-          ))}
-        </div>
-
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, display: 'block', marginBottom: 5 }}>Email</label>
@@ -125,7 +102,7 @@ export function LoginPage() {
             <label style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, display: 'block', marginBottom: 5 }}>Contraseña</label>
             <input
               type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
+              placeholder="••••••••"
               minLength={6}
               style={{
                 width: '100%', padding: '11px 14px', background: 'var(--bg-input)',
@@ -143,13 +120,6 @@ export function LoginPage() {
               color: 'var(--danger)', fontSize: 13,
             }}>{error}</div>
           )}
-          {success && (
-            <div style={{
-              padding: '10px 14px', marginBottom: 14, borderRadius: 'var(--radius-sm)',
-              background: 'var(--success-bg)', border: '1px solid rgba(0,214,143,0.2)',
-              color: 'var(--success)', fontSize: 13,
-            }}>{success}</div>
-          )}
 
           <button type="submit" disabled={submitting} style={{
             width: '100%', padding: '12px 0', border: 'none',
@@ -158,9 +128,13 @@ export function LoginPage() {
             color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)',
             transition: 'var(--transition)',
           }}>
-            {submitting ? 'Cargando...' : mode === 'register' ? 'Crear Cuenta' : 'Entrar'}
+            {submitting ? 'Cargando...' : 'Iniciar Sesión'}
           </button>
         </form>
+
+        <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', marginTop: 20 }}>
+          Acceso solo para usuarios autorizados
+        </p>
       </div>
     </div>
   );
