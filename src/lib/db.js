@@ -501,3 +501,35 @@ export const costConfig = {
     }
   },
 };
+
+// ── User Roles ──
+export const userRoles = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('user_roles').select('*').order('created_at');
+    if (error) throw error;
+    return data;
+  },
+  getMyRole: async (userId) => {
+    const { data, error } = await supabase.from('user_roles').select('*').eq('user_id', userId).single();
+    if (error && error.code === 'PGRST116') return null;
+    if (error) throw error;
+    return data;
+  },
+  setRole: async (userId, email, role, name) => {
+    const { data, error } = await supabase.from('user_roles').upsert({
+      user_id: userId, email, role, name,
+    }, { onConflict: 'user_id' }).select().single();
+    if (error) throw error;
+    return data;
+  },
+  delete: async (id) => {
+    const { error } = await supabase.from('user_roles').delete().eq('id', id);
+    if (error) throw error;
+  },
+  createUser: async (email, password) => {
+    // Uses Supabase admin-like signup (creates user without logging in)
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    return data.user;
+  },
+};

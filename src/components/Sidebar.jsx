@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { id: 'suppliers', label: 'Proveedores', icon: '🚚' },
   { id: 'pricing', label: 'Precios', icon: '💲' },
   { id: 'categories', label: 'Categorías', icon: '🏷️' },
+  { id: 'users', label: 'Usuarios', icon: '👥' },
   { id: 'history', label: 'Historial Prod.', icon: '📋' },
   { id: 'activity', label: 'Log Actividad', icon: '🕐' },
   { id: 'reports', label: 'Reportes', icon: '📈' },

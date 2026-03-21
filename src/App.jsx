@@ -13,6 +13,7 @@ import Reports from './components/Reports';
 import ProductionHistory from './components/ProductionHistory';
 import ActivityLog from './components/ActivityLog';
 import Categories from './components/Categories';
+import Users from './components/Users';
 import Pricing from './components/Pricing';
 import { Button } from './components/UI';
 import { auth, preferences } from './lib/db';
@@ -26,7 +27,7 @@ function AppContent() {
   });
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','pricing','categories','history','activity','reports'];
+    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','pricing','categories','users','history','activity','reports'];
     return validViews.includes(hash) ? hash : 'dashboard';
   };
   const [view, setViewState] = useState(getInitialView);
@@ -132,7 +133,7 @@ function AppContent() {
     const views = {
       dashboard: Dashboard, inventory: Inventory, formulas: Formulas, production: Production,
       products: Products, sales: Sales, clients: Clients, suppliers: Suppliers,
-      pricing: Pricing, categories: Categories, reports: Reports, history: ProductionHistory, activity: ActivityLog,
+      pricing: Pricing, categories: Categories, users: Users, reports: Reports, history: ProductionHistory, activity: ActivityLog,
     };
     const View = views[view] || Dashboard;
     return <View {...props} />;
