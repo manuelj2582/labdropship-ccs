@@ -104,6 +104,80 @@ export const rawMaterials = {
   },
 };
 
+// ── Purchases (Compras) ──
+export const purchases = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('purchases')
+      .select('*, material:raw_materials(id, name, unit), supplier:suppliers(id, name)')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  getByMaterial: async (materialId) => {
+    const { data, error } = await supabase.from('purchases')
+      .select('*, supplier:suppliers(id, name)')
+      .eq('material_id', materialId)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  register: async (purchase, user) => {
+    // 1. Get current material
+    const { data: mat, error: mErr } = await supabase.from('raw_materials')
+      .select('*').eq('id', purchase.material_id).single();
+    if (mErr) throw mErr;
+
+    // 2. Convert purchase quantity to base unit
+    const conversionMap = { 'L_ml': 1000, 'ml_L': 0.001, 'kg_g': 1000, 'g_kg': 0.001 };
+    const factor = conversionMap[`${purchase.purchase_unit}_${mat.unit}`] || 1;
+    const quantityBase = purchase.quantity * factor;
+    const unitPrice = quantityBase > 0 ? purchase.total_price / quantityBase : 0;
+
+    // 3. Calculate weighted average cost
+    const currentValue = mat.stock * mat.cost; // value of current inventory
+    const newValue = purchase.total_price; // value of new purchase
+    const newStock = mat.stock + quantityBase;
+    const weightedCost = newStock > 0 ? (currentValue + newValue) / newStock : unitPrice;
+
+    // 4. Update material stock and cost
+    const { error: uErr } = await supabase.from('raw_materials').update({
+      stock: newStock,
+      cost: Math.round(weightedCost * 10000) / 10000,
+      supplier_id: purchase.supplier_id || mat.supplier_id,
+    }).eq('id', purchase.material_id);
+    if (uErr) throw uErr;
+
+    // 5. Save purchase record
+    const { data, error } = await supabase.from('purchases').insert({
+      material_id: purchase.material_id,
+      supplier_id: purchase.supplier_id || null,
+      date: purchase.date || new Date().toISOString().split('T')[0],
+      quantity: purchase.quantity,
+      purchase_unit: purchase.purchase_unit,
+      quantity_base: quantityBase,
+      total_price: purchase.total_price,
+      unit_price: Math.round(unitPrice * 10000) / 10000,
+      notes: purchase.notes || null,
+      created_by: user?.id,
+      created_by_email: user?.email,
+    }).select().single();
+    if (error) throw error;
+
+    await activityLog.log(user, 'comprar', 'compra', data.id, mat.name, {
+      cantidad: `${purchase.quantity} ${purchase.purchase_unit}`,
+      precio: purchase.total_price,
+      costo_unitario: Math.round(unitPrice * 10000) / 10000,
+      costo_promedio: Math.round(weightedCost * 10000) / 10000,
+    });
+
+    return { purchase: data, newStock, weightedCost };
+  },
+  delete: async (id) => {
+    const { error } = await supabase.from('purchases').delete().eq('id', id);
+    if (error) throw error;
+  },
+};
+
 // ── Formulas ──
 export const formulas = {
   getAll: async () => {

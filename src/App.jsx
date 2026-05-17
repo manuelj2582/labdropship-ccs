@@ -23,7 +23,7 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [data, setData] = useState({
     rawMaterials: [], formulas: [], products: [], presentations: [],
-    sales: [], suppliers: [], clients: [], productionLogs: [], categories: [], supplierPrices: [],
+    sales: [], suppliers: [], clients: [], productionLogs: [], categories: [], supplierPrices: [], purchases: [],
   });
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
@@ -96,7 +96,9 @@ function AppContent() {
       ]);
       let sPrices = [];
       try { sPrices = await db.supplierPrices.getAll(); } catch (e) { console.warn('supplier_prices table not found, run migration v3.8'); }
-      setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats, supplierPrices: sPrices });
+      let purch = [];
+      try { purch = await db.purchases.getAll(); } catch (e) { console.warn('purchases table not found, run migration v3.19'); }
+      setData({ rawMaterials: rawMats, formulas, products: prods, presentations: pres, sales: salesData, suppliers: supps, clients: cls, productionLogs: logs, categories: cats, supplierPrices: sPrices, purchases: purch });
     } catch (err) {
       console.error('Error loading:', err);
       showToast('Error cargando datos: ' + err.message, 'error');

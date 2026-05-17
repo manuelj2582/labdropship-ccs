@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, Button, StatusBadge, Modal, ModalActions, Input, Select, tableStyle, thStyle, tdStyle } from './UI';
 import { UNITS } from '../data/initialData';
 import * as db from '../lib/db';
-import { fmt } from '../utils';
+import { fmt, fmtDate } from '../utils';
 
 const MATERIAL_TYPES = [
   { id: 'materia_prima', label: 'Materia Prima', icon: '🧪' },
@@ -16,7 +16,11 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('materia_prima');
-  const [form, setForm] = useState({ name: '', unit: 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: 'materia_prima' });
+  const [form, setForm] = useState({ name: '', unit: 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: 'materia_prima', volume: '', volume_unit: 'ml' });
+
+  // Purchase modal
+  const [purchaseModal, setPurchaseModal] = useState(null); // material id
+  const [purchaseForm, setPurchaseForm] = useState({ supplier_id: '', quantity: '', purchase_unit: 'unidad', total_price: '', date: new Date().toISOString().split('T')[0], notes: '' });
 
   const openAdd = () => {
     setForm({ name: '', unit: activeTab === 'envase' ? 'unidad' : activeTab === 'etiqueta' ? 'unidad' : 'g', stock: 0, min_stock: 0, cost: 0, supplier_id: '', material_type: activeTab, volume: '', volume_unit: 'ml' });
@@ -59,29 +63,59 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
     } catch (err) { showToast('Error: ' + err.message, 'error'); }
   };
 
+  // Purchase
+  const openPurchase = (materialId) => {
+    const mat = data.rawMaterials.find(m => m.id === materialId);
+    setPurchaseForm({
+      supplier_id: mat?.supplier_id || '',
+      quantity: '',
+      purchase_unit: mat?.unit || 'unidad',
+      total_price: '',
+      date: new Date().toISOString().split('T')[0],
+      notes: '',
+    });
+    setPurchaseModal(materialId);
+  };
+
+  const savePurchase = async () => {
+    if (!purchaseForm.quantity || !purchaseForm.total_price) {
+      showToast('Cantidad y precio total son requeridos', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await db.purchases.register({
+        material_id: purchaseModal,
+        supplier_id: purchaseForm.supplier_id || null,
+        quantity: +purchaseForm.quantity,
+        purchase_unit: purchaseForm.purchase_unit,
+        total_price: +purchaseForm.total_price,
+        date: purchaseForm.date,
+        notes: purchaseForm.notes,
+      }, user);
+      await loadData();
+      showToast(`Compra registrada · Stock: ${result.newStock.toFixed(1)} · Costo promedio: ${fmt(result.weightedCost)}/${data.rawMaterials.find(m => m.id === purchaseModal)?.unit || 'ud'}`);
+      setPurchaseModal(null);
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    finally { setSaving(false); }
+  };
+
   // Where is this material used?
   const getUsage = (materialId) => {
-    // As ingredient in formulas
     const inFormulas = data.formulas.filter(f =>
       (f.ingredients || []).some(ing => ing.material_id === materialId)
     ).map(f => ({ type: 'formula', name: f.name, id: f.id }));
-
-    // As envase in presentations
     const inPresentations = (data.presentations || []).filter(p => p.envase_id === materialId)
       .map(p => {
         const formula = data.formulas.find(f => f.id === p.formula_id);
         return { type: 'presentacion', name: p.name, formulaName: formula?.name, id: p.id };
       });
-
     return { inFormulas, inPresentations, total: inFormulas.length + inPresentations.length };
   };
 
-  // Supplier prices for a material
-  const getPrices = (materialId) => {
-    return (data.supplierPrices || [])
-      .filter(sp => sp.material_id === materialId)
-      .sort((a, b) => a.cost_per_unit - b.cost_per_unit);
-  };
+  const getPrices = (materialId) => (data.supplierPrices || []).filter(sp => sp.material_id === materialId).sort((a, b) => a.cost_per_unit - b.cost_per_unit);
+
+  const getPurchases = (materialId) => (data.purchases || []).filter(p => p.material_id === materialId);
 
   const materialsOfType = useMemo(() => {
     let mats = data.rawMaterials.filter(m => (m.material_type || 'materia_prima') === activeTab);
@@ -89,10 +123,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    // Sort envases by volume
-    if (activeTab === 'envase') {
-      mats.sort((a, b) => (a.volume || 9999) - (b.volume || 9999));
-    }
+    if (activeTab === 'envase') mats.sort((a, b) => (a.volume || 9999) - (b.volume || 9999));
     return mats;
   }, [data.rawMaterials, activeTab, searchQuery]);
 
@@ -148,6 +179,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               const isLow = m.stock <= m.min_stock && m.min_stock > 0;
               const usage = getUsage(m.id);
               const prices = getPrices(m.id);
+              const purchases = getPurchases(m.id);
               return (
                 <tr key={m.id} onClick={() => setDetailId(m.id)} style={{ background: isLow ? 'rgba(255,90,101,0.03)' : 'transparent', cursor: 'pointer', transition: '0.1s' }}>
                   {activeTab === 'envase' && (
@@ -158,14 +190,16 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{m.name}</td>
                   <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-secondary)' }}>
                     {m.supplier?.name || '—'}
-                    {prices.length > 1 && <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>+{prices.length} cot.</span>}
                   </td>
                   <td style={tdStyle}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{Number(m.stock).toLocaleString()}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 4 }}>{m.unit}</span>
                   </td>
                   <td style={tdStyle}><StatusBadge status={isLow ? 'bajo' : 'ok'} /></td>
-                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>{fmt(m.cost)}/{m.unit}</td>
+                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>
+                    {fmt(m.cost)}/{m.unit}
+                    {purchases.length > 0 && <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>prom. ponderado</div>}
+                  </td>
                   <td style={tdStyle}>
                     {usage.total > 0 ? (
                       <span style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
@@ -179,6 +213,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
                   </td>
                   <td style={tdStyle} onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: 4 }}>
+                      <Button variant="success" size="sm" onClick={() => openPurchase(m.id)} title="Registrar compra">🛒</Button>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>✎</Button>
                       <Button variant="danger" size="sm" onClick={() => remove(m.id, m.name)}>✕</Button>
                     </div>
@@ -199,6 +234,7 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
       {detailMaterial && (() => {
         const usage = getUsage(detailMaterial.id);
         const prices = getPrices(detailMaterial.id);
+        const materialPurchases = getPurchases(detailMaterial.id);
         const isLow = detailMaterial.stock <= detailMaterial.min_stock && detailMaterial.min_stock > 0;
         return (
           <Modal title={detailMaterial.name} onClose={() => setDetailId(null)} wide>
@@ -210,13 +246,48 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
                   color: detailMaterial.material_type === 'envase' ? '#60A5FA' : detailMaterial.material_type === 'etiqueta' ? '#FBBF24' : '#A78BFA',
                 }}>{MATERIAL_TYPES.find(t => t.id === (detailMaterial.material_type || 'materia_prima'))?.icon} {detailMaterial.material_type || 'materia_prima'}</span>
                 {isLow && <StatusBadge status="bajo" />}
+                <Button variant="success" size="sm" onClick={() => { setDetailId(null); openPurchase(detailMaterial.id); }}>🛒 Comprar</Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(detailMaterial)}>✎ Editar</Button>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>{fmt(detailMaterial.cost)}<span style={{ fontSize: 12, color: 'var(--text-dim)' }}>/{detailMaterial.unit}</span></div>
                 <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Stock: {Number(detailMaterial.stock).toLocaleString()} {detailMaterial.unit}</div>
                 {detailMaterial.volume && <div style={{ fontSize: 12, color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Volumen: {detailMaterial.volume} {detailMaterial.volume_unit || 'ml'}</div>}
+                {materialPurchases.length > 0 && <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Costo = promedio ponderado</div>}
               </div>
+            </div>
+
+            {/* Purchase history */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                🛒 HISTORIAL DE COMPRAS ({materialPurchases.length})
+              </div>
+              {materialPurchases.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>Sin compras registradas. El costo actual fue ingresado manualmente.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {materialPurchases.map(p => (
+                    <div key={p.id} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-input)', border: '1px solid var(--border)', fontSize: 12,
+                    }}>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{fmtDate(p.date)}</span>
+                        <span style={{ marginLeft: 8, fontWeight: 600 }}>{p.quantity} {p.purchase_unit}</span>
+                        {p.supplier?.name && <span style={{ marginLeft: 8, color: 'var(--text-dim)' }}>· {p.supplier.name}</span>}
+                        {p.notes && <span style={{ marginLeft: 8, color: 'var(--text-dim)', fontStyle: 'italic' }}>· {p.notes}</span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{fmt(p.total_price)}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{fmt(p.unit_price)}/{detailMaterial.unit}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Where is it used */}
@@ -225,31 +296,19 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
                 📌 USADO EN ({usage.total})
               </div>
               {usage.total === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>Este material no está siendo usado en ninguna fórmula o presentación</div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>No está siendo usado</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {usage.inFormulas.map(f => (
-                    <div key={f.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-                      borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)',
-                    }}>
+                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)' }}>
                       <span style={{ fontSize: 14 }}>🧪</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{f.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Como ingrediente en fórmula</div>
-                      </div>
+                      <div><div style={{ fontSize: 13, fontWeight: 600 }}>{f.name}</div><div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Ingrediente</div></div>
                     </div>
                   ))}
                   {usage.inPresentations.map(p => (
-                    <div key={p.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-                      borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)',
-                    }}>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)' }}>
                       <span style={{ fontSize: 14 }}>🫙</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Envase de {p.formulaName || 'fórmula'}</div>
-                      </div>
+                      <div><div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Envase de {p.formulaName}</div></div>
                     </div>
                   ))}
                 </div>
@@ -257,13 +316,11 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
             </div>
 
             {/* Supplier prices */}
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
-                💲 PRECIOS DE PROVEEDORES ({prices.length})
-              </div>
-              {prices.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px 0' }}>Sin cotizaciones — ve al módulo Cotizador para agregar precios</div>
-              ) : (
+            {prices.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                  💲 PRECIOS DE PROVEEDORES ({prices.length})
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {prices.map((p, i) => (
                     <div key={p.id} style={{
@@ -276,22 +333,100 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
                         {i === 0 && prices.length > 1 && <span>🏆</span>}
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{p.supplier?.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-                            ${Number(p.price).toFixed(2)} por {p.unit_amount}{p.unit}
-                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>${Number(p.price).toFixed(2)} por {p.unit_amount}{p.unit}</div>
                         </div>
                       </div>
-                      <div style={{
-                        fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-mono)',
-                        color: i === 0 ? 'var(--success)' : 'var(--text-primary)',
-                      }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-mono)', color: i === 0 ? 'var(--success)' : 'var(--text-primary)' }}>
                         {fmt(p.cost_per_unit)}<span style={{ fontSize: 10, color: 'var(--text-dim)' }}>/{detailMaterial.unit}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
+          </Modal>
+        );
+      })()}
+
+      {/* ═══ PURCHASE MODAL ═══ */}
+      {purchaseModal && (() => {
+        const mat = data.rawMaterials.find(m => m.id === purchaseModal);
+        if (!mat) return null;
+        const conversionMap = { 'L_ml': 1000, 'ml_L': 0.001, 'kg_g': 1000, 'g_kg': 0.001 };
+        const factor = conversionMap[`${purchaseForm.purchase_unit}_${mat.unit}`] || 1;
+        const qtyBase = (+purchaseForm.quantity || 0) * factor;
+        const unitPrice = qtyBase > 0 ? (+purchaseForm.total_price || 0) / qtyBase : 0;
+
+        // Preview weighted average
+        const currentValue = mat.stock * mat.cost;
+        const newValue = +purchaseForm.total_price || 0;
+        const newStock = mat.stock + qtyBase;
+        const weightedCost = newStock > 0 ? (currentValue + newValue) / newStock : unitPrice;
+
+        return (
+          <Modal title={`🛒 Compra: ${mat.name}`} onClose={() => setPurchaseModal(null)}>
+            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)', border: '1px solid var(--border)', marginBottom: 12, fontSize: 12 }}>
+              Stock actual: <strong>{Number(mat.stock).toLocaleString()} {mat.unit}</strong> · Costo actual: <strong style={{ color: 'var(--warning)' }}>{fmt(mat.cost)}/{mat.unit}</strong>
             </div>
+
+            <Input label="Fecha de compra" type="date" value={purchaseForm.date} onChange={v => setPurchaseForm({ ...purchaseForm, date: v })} />
+
+            <Select label="Proveedor" value={purchaseForm.supplier_id}
+              options={data.suppliers.map(s => ({ value: s.id, label: s.name }))}
+              onChange={v => setPurchaseForm({ ...purchaseForm, supplier_id: v })} placeholder="Seleccionar..." />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+              <Input label="Cantidad comprada" type="number" value={purchaseForm.quantity}
+                onChange={v => setPurchaseForm({ ...purchaseForm, quantity: v })} step="0.01"
+                placeholder={mat.unit === 'ml' ? 'Ej: 20 (litros)' : 'Ej: 5 (kg)'} />
+              <Select label="Unidad de compra" value={purchaseForm.purchase_unit}
+                options={['unidad', 'ml', 'L', 'g', 'kg', 'oz'].map(u => ({ value: u, label: u }))}
+                onChange={v => setPurchaseForm({ ...purchaseForm, purchase_unit: v })} />
+            </div>
+
+            <Input label="Precio total pagado ($)" type="number" value={purchaseForm.total_price}
+              onChange={v => setPurchaseForm({ ...purchaseForm, total_price: v })} step="0.01"
+              placeholder="Ej: 20.00" />
+
+            <Input label="Notas (opcional)" value={purchaseForm.notes}
+              onChange={v => setPurchaseForm({ ...purchaseForm, notes: v })}
+              placeholder="Ej: proveedor X, factura #123" />
+
+            {/* Preview */}
+            {purchaseForm.quantity > 0 && purchaseForm.total_price > 0 && (
+              <div style={{
+                padding: 14, borderRadius: 'var(--radius-sm)', marginTop: 8,
+                background: 'var(--success-bg)', border: '1px solid rgba(0,214,143,0.2)',
+              }}>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                  RESULTADO DE ESTA COMPRA
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                  {purchaseForm.purchase_unit !== mat.unit && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-dim)' }}>Conversión:</span>
+                      <span style={{ fontFamily: 'var(--font-mono)' }}>{purchaseForm.quantity} {purchaseForm.purchase_unit} = {qtyBase.toLocaleString()} {mat.unit}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-dim)' }}>Costo esta compra:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{fmt(unitPrice)}/{mat.unit}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,214,143,0.15)', paddingTop: 6, marginTop: 4 }}>
+                    <span style={{ color: 'var(--text-dim)' }}>Stock anterior → nuevo:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{Number(mat.stock).toLocaleString()} → <strong>{Number(newStock).toLocaleString()}</strong> {mat.unit}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-dim)' }}>Costo anterior → nuevo:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{fmt(mat.cost)} → <strong style={{ color: 'var(--success)' }}>{fmt(weightedCost)}</strong>/{mat.unit}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <ModalActions onCancel={() => setPurchaseModal(null)} onConfirm={savePurchase}
+              confirmLabel={saving ? 'Registrando...' : '🛒 Registrar Compra'} confirmDisabled={saving || !purchaseForm.quantity || !purchaseForm.total_price}
+              confirmVariant="success" />
           </Modal>
         );
       })()}
@@ -319,6 +454,13 @@ export default function Inventory({ data, loadData, showToast, searchQuery, user
               <Select label="Unidad" value={form.volume_unit} options={['ml', 'L', 'oz', 'g', 'kg'].map(u => ({ value: u, label: u }))} onChange={v => setForm({ ...form, volume_unit: v })} />
             </div>
           )}
+
+          {!editId && (
+            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-bg)', border: '1px solid rgba(108,114,255,0.15)', fontSize: 12, color: 'var(--accent)', marginTop: 4 }}>
+              💡 Para registrar compras y que el costo se calcule automáticamente, usa el botón 🛒 después de crear el material.
+            </div>
+          )}
+
           <ModalActions onCancel={() => setModal(false)} onConfirm={save} confirmLabel={saving ? 'Guardando...' : editId ? 'Actualizar' : 'Agregar'} confirmDisabled={saving} />
         </Modal>
       )}
