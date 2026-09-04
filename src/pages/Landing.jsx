@@ -6,6 +6,9 @@ const WHATSAPP = '584246528973';
 const wa = (text) => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`;
 const WA_DEFAULT = 'Hola VeneLab, quiero información para vender sus productos.';
 
+// Testimonios reales de clientes. Vacío = la sección no se muestra. Formato: { quote, name, handle, role }
+const TESTIMONIALS = [];
+
 const LINES = [
   { slug: 'salud_y_belleza', name: 'Salud y Belleza', blurb: 'Cremas, aceites, elixires, cuidado bucal, íntimo y corporal.' },
   { slug: 'serum', name: 'Skincare', blurb: 'Serums, tónicos, agua micelar, cremas faciales.' },
@@ -47,6 +50,12 @@ export default function Landing() {
   }, [byLine]);
 
   const total = products.length;
+  const vextaCount = products.length;
+  const brandPhotos = useMemo(() => {
+    const picks = [];
+    for (const l of LINES) { const it = (byLine[l.slug] || [])[0]; if (it) picks.push(it); }
+    return picks.slice(0, 5);
+  }, [byLine]);
 
   return (
     <div className="vl">
@@ -58,6 +67,7 @@ export default function Landing() {
           <nav aria-label="Secciones">
             <a href="#lineas">Líneas</a>
             <a href="#como">Cómo funciona</a>
+            <a href="#marca">Tu marca</a>
             <a href="/catalogo">Catálogo</a>
           </nav>
           <a className="btn btn-wa" href={wa(WA_DEFAULT)} target="_blank" rel="noreferrer"><WaIcon /> WhatsApp</a>
@@ -152,6 +162,40 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="vl-sec vl-brand" id="marca">
+        <div className="wrap">
+          <div className="vl-brand-grid">
+            <div>
+              <h2>Creamos VEXTA. Podemos crear tu marca.</h2>
+              <p className="sub">VEXTA es una marca que nació en nuestro laboratorio: fórmula, envase, etiqueta y producción, todo hecho aquí. Hoy tiene {vextaCount > 0 ? `${vextaCount} productos` : 'decenas de productos'} en seis líneas y se vende online en Venezuela.</p>
+              <p className="sub">Si vendes al mayor, hacemos lo mismo contigo: formulamos, envasamos y etiquetamos con tu nombre. Tu marca, nuestra fábrica.</p>
+              <div className="ctas">
+                <a className="btn btn-wa" href={wa('Hola VeneLab, quiero información sobre fabricar con mi propia marca.')} target="_blank" rel="noreferrer"><WaIcon /> Quiero mi marca</a>
+              </div>
+            </div>
+            <div className="vl-brand-photos" aria-label="Productos VEXTA fabricados por VeneLab">
+              {brandPhotos.map((p, i) => <figure key={p.id} className={`p${i}`}><img src={p.image_url} alt={`${p.name}, marca VEXTA`} loading="lazy" /></figure>)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {TESTIMONIALS.length > 0 && (
+        <section className="vl-sec" id="clientes">
+          <div className="wrap">
+            <h2>Lo que dicen quienes ya venden VeneLab.</h2>
+            <div className="vl-quotes">
+              {TESTIMONIALS.map((t, i) => (
+                <blockquote key={i}>
+                  <p>“{t.quote}”</p>
+                  <footer><b>{t.name}</b>{t.handle ? ` · ${t.handle}` : ''}{t.role ? ` · ${t.role}` : ''}</footer>
+                </blockquote>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="vl-sec">
         <div className="wrap">
           <h2>Importar o fabricar aquí.</h2>
@@ -177,7 +221,7 @@ export default function Landing() {
             <details><summary>¿Cuál es el mínimo de compra al mayor?</summary><p>Depende del producto y la presentación. Te pasamos la lista con mínimos y precios por WhatsApp; no publicamos precios en la web.</p></details>
             <details><summary>¿Puedo vender sin comprar stock?</summary><p>Sí. Te registras como dropshipper, subes el producto a tu tienda o plataforma y nosotros despachamos cada pedido contra entrega.</p></details>
             <details><summary>¿Entregan fuera de Caracas?</summary><p>En Caracas entregamos directo. Al interior del país despachamos por courier nacional.</p></details>
-            <details><summary>¿Puedo poner mi propia marca?</summary><p>Para volúmenes al mayor podemos etiquetar con tu marca. Escríbenos y lo cotizamos según el producto.</p></details>
+            <details><summary>¿Puedo poner mi propia marca?</summary><p>Sí. Así nació VEXTA. Para volúmenes al mayor formulamos, envasamos y etiquetamos con tu marca. Escríbenos y lo cotizamos según el producto.</p></details>
             <details><summary>¿Cómo empiezo?</summary><p>Escríbenos por WhatsApp con la línea que te interesa. Te respondemos con catálogo, mínimos y precios el mismo día.</p></details>
           </div>
         </div>
