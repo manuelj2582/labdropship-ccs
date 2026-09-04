@@ -79,7 +79,7 @@ export default function Ecom() {
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#6C72FF,#A78BFA)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🧪</div>
           <div>
             <div style={{ fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em' }}>VeneLab</div>
-            <div style={{ fontSize: 11, color: '#4F6289', letterSpacing: '0.12em' }}>FABRICADO EN CARACAS · ECOM 2026</div>
+            <div style={{ fontSize: 11, color: '#4F6289', letterSpacing: '0.12em' }}>FABRICADO EN VENEZUELA · ECOM 2026</div>
           </div>
         </div>
 
