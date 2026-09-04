@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-const WHATSAPP_NUMBER = '584121234567'; // CAMBIAR por tu número real
+const WHATSAPP_NUMBER = '584246528973';
 
 export default function Catalog() {
   const { category: urlCategory } = useParams();
@@ -17,6 +17,7 @@ export default function Catalog() {
   const [hoveredProduct, setHoveredProduct] = useState(null);
 
   useEffect(() => {
+    document.title = 'VeneLab · Catálogo mayorista';
     document.documentElement.style.overflow = 'auto';
     document.body.style.overflow = 'auto';
     const root = document.getElementById('root');
@@ -340,7 +341,7 @@ export default function Catalog() {
           <p style={{ fontSize: 13, color: '#4F6289', marginBottom: 16, lineHeight: 1.6 }}>Laboratorio de productos para dropshipping · Caracas, Venezuela</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
             <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" style={{ padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: '#25D366', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>📱 WhatsApp</a>
-            <a href="mailto:ventas@venelab.com" style={{ padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: 'rgba(108,114,255,0.1)', color: '#6C72FF', border: '1px solid rgba(108,114,255,0.2)', textDecoration: 'none' }}>✉️ Email</a>
+            <a href="mailto:ventas@venelab.co" style={{ padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: 'rgba(108,114,255,0.1)', color: '#6C72FF', border: '1px solid rgba(108,114,255,0.2)', textDecoration: 'none' }}>✉️ Email</a>
           </div>
           <div style={{ marginTop: 24, fontSize: 11, color: '#2D3A54', fontFamily: "'JetBrains Mono', monospace" }}>© 2026 VeneLab · Todos los derechos reservados</div>
         </div>

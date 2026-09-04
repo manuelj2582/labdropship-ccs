@@ -576,6 +576,24 @@ export const costConfig = {
   },
 };
 
+// ── Leads (captura pública /ecom) ──
+export const leads = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  // Inserción anónima desde la página pública; RLS permite INSERT a anon.
+  create: async (lead) => {
+    const { error } = await supabase.from('leads').insert(lead);
+    if (error) throw error;
+  },
+  update: async (id, updates) => {
+    const { error } = await supabase.from('leads').update(updates).eq('id', id);
+    if (error) throw error;
+  },
+};
+
 // ── User Roles ──
 export const userRoles = {
   getAll: async () => {

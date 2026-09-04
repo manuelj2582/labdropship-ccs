@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../lib/db';
+import { auth, userRoles } from '../lib/db';
+import { DEFAULT_ROLE } from '../lib/roles';
 
 const AuthContext = createContext(null);
 
@@ -7,7 +8,13 @@ export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(DEFAULT_ROLE);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setRole(DEFAULT_ROLE); return; }
+    userRoles.getMyRole(user.id).then(r => setRole(r?.role || DEFAULT_ROLE)).catch(() => setRole(DEFAULT_ROLE));
+  }, [user]);
 
   useEffect(() => {
     // Check current session
@@ -26,7 +33,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, role, loading }}>
       {children}
     </AuthContext.Provider>
   );
