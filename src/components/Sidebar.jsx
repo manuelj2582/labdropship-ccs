@@ -1,4 +1,5 @@
 import React from 'react';
+import { canView } from '../lib/roles';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -8,6 +9,7 @@ const NAV_ITEMS = [
   { id: 'products', label: 'Productos', icon: '🏷️' },
   { id: 'sales', label: 'Ventas Mayor', icon: '💰' },
   { id: 'clients', label: 'Clientes', icon: '👥' },
+  { id: 'leads', label: 'Leads ECOM', icon: '🎯' },
   { id: 'suppliers', label: 'Proveedores', icon: '🚚' },
   { id: 'pricing', label: 'Precios', icon: '💲' },
   { id: 'categories', label: 'Categorías', icon: '🏷️' },
@@ -19,7 +21,7 @@ const NAV_ITEMS = [
 
 export { NAV_ITEMS };
 
-export default function Sidebar({ view, setView, open, setOpen }) {
+export default function Sidebar({ view, setView, open, setOpen, role }) {
   return (
     <div className={`sidebar ${open ? 'open' : ''}`} style={{
       width: open ? 240 : 64, background: 'var(--bg-secondary)',
@@ -43,7 +45,7 @@ export default function Sidebar({ view, setView, open, setOpen }) {
         )}
       </div>
       <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-        {NAV_ITEMS.map(n => {
+        {NAV_ITEMS.filter(n => canView(role, n.id)).map(n => {
           const active = view === n.id;
           return (
             <button key={n.id} onClick={() => { setView(n.id); if (window.innerWidth < 768) setOpen(false); }}
@@ -66,8 +68,8 @@ export default function Sidebar({ view, setView, open, setOpen }) {
       </nav>
       {open && (
         <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-          <div>v2.2.0 · 2026</div>
-          <div style={{ marginTop: 2 }}>venelab.com</div>
+          <div>v2.3.0 · 2026</div>
+          <div style={{ marginTop: 2 }}>venelab.co</div>
         </div>
       )}
     </div>

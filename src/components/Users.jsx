@@ -3,12 +3,7 @@ import { Card, Button, Modal, ModalActions, Input, Select } from './UI';
 import { supabase } from '../lib/supabase';
 import * as db from '../lib/db';
 
-const ROLES = [
-  { id: 'admin', label: 'Administrador', icon: '👑', desc: 'Acceso total: crear usuarios, configurar, eliminar datos' },
-  { id: 'manager', label: 'Gerente', icon: '📊', desc: 'Todo excepto crear usuarios y configuración del sistema' },
-  { id: 'operator', label: 'Operador', icon: '⚙️', desc: 'Producción, inventario, ventas. Sin acceso a precios ni reportes' },
-  { id: 'viewer', label: 'Visor', icon: '👁️', desc: 'Solo puede ver datos, no puede modificar nada' },
-];
+import { ROLES } from '../lib/roles';
 
 export default function Users({ user, showToast }) {
   const [users, setUsers] = useState([]);

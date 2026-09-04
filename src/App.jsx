@@ -15,19 +15,21 @@ import ActivityLog from './components/ActivityLog';
 import Categories from './components/Categories';
 import Users from './components/Users';
 import Pricing from './components/Pricing';
+import Leads from './components/Leads';
+import { canView } from './lib/roles';
 import { Button } from './components/UI';
 import { auth, preferences } from './lib/db';
 import * as db from './lib/db';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const [data, setData] = useState({
     rawMaterials: [], formulas: [], products: [], presentations: [],
     sales: [], suppliers: [], clients: [], productionLogs: [], categories: [], supplierPrices: [], purchases: [],
   });
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','suppliers','pricing','categories','users','history','activity','reports'];
+    const validViews = ['dashboard','inventory','formulas','production','products','sales','clients','leads','suppliers','pricing','categories','users','history','activity','reports'];
     return validViews.includes(hash) ? hash : 'dashboard';
   };
   const [view, setViewState] = useState(getInitialView);
@@ -128,22 +130,25 @@ function AppContent() {
 
   if (!user) return <LoginPage />;
 
+  // Si el rol no puede ver la vista actual (hash manual, cambio de rol), volver al dashboard
+  useEffect(() => { if (!canView(role, view)) setView('dashboard'); }, [role, view]);
+
   const currentNav = NAV_ITEMS.find(n => n.id === view);
 
   const renderView = () => {
-    const props = { data, setData, showToast, formulasWithCosts, loadData, user, searchQuery };
+    const props = { data, setData, showToast, formulasWithCosts, loadData, user, role, searchQuery };
     const views = {
       dashboard: Dashboard, inventory: Inventory, formulas: Formulas, production: Production,
       products: Products, sales: Sales, clients: Clients, suppliers: Suppliers,
-      pricing: Pricing, categories: Categories, users: Users, reports: Reports, history: ProductionHistory, activity: ActivityLog,
+      pricing: Pricing, categories: Categories, users: Users, reports: Reports, history: ProductionHistory, activity: ActivityLog, leads: Leads,
     };
-    const View = views[view] || Dashboard;
+    const View = (canView(role, view) && views[view]) || Dashboard;
     return <View {...props} />;
   };
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar view={view} setView={setView} open={sidebarOpen} setOpen={setSidebarOpen} />
+      <Sidebar view={view} setView={setView} open={sidebarOpen} setOpen={setSidebarOpen} role={role} />
 
       {/* Mobile overlay */}
       {sidebarOpen && window.innerWidth < 768 && (
@@ -188,7 +193,7 @@ function AppContent() {
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
 
-            <Button variant="successGhost" size="sm" onClick={() => setView('production')} style={{ display: window.innerWidth < 480 ? 'none' : undefined }}>⚙️ Producir</Button>
+            {canView(role, 'production') && <Button variant="successGhost" size="sm" onClick={() => setView('production')} style={{ display: window.innerWidth < 480 ? 'none' : undefined }}>⚙️ Producir</Button>}
             <Button variant="ghost" size="sm" onClick={() => setView('sales')} style={{ display: window.innerWidth < 480 ? 'none' : undefined }}>💰 Pedido</Button>
 
             {/* User */}
