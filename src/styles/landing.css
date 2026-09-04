@@ -1,0 +1,156 @@
+/* VeneLab landing — tokens propios, aislados bajo .vl */
+.vl {
+  --vl-bg: oklch(12% 0.02 275);
+  --vl-bg-2: oklch(16% 0.025 275);
+  --vl-ink: oklch(96% 0.01 275);
+  --vl-ink-2: oklch(80% 0.02 275);
+  --vl-muted: oklch(66% 0.03 275);
+  --vl-line: oklch(30% 0.03 275);
+  --vl-violet: oklch(62% 0.2 282);
+  --vl-violet-2: oklch(74% 0.14 292);
+  --vl-violet-ink: oklch(20% 0.08 282);
+  --vl-wa: oklch(72% 0.19 150);
+  --vl-wa-ink: oklch(18% 0.06 150);
+  --vl-display: 'Unbounded', 'Helvetica Neue', Arial, sans-serif;
+  --vl-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --vl-max: 1180px;
+  --vl-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--vl-bg);
+  color: var(--vl-ink);
+  font-family: var(--vl-body);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+.vl *, .vl *::before, .vl *::after { box-sizing: border-box; }
+.vl a { color: inherit; text-decoration: none; }
+.vl img { display: block; max-width: 100%; }
+.vl h1, .vl h2, .vl h3 { font-family: var(--vl-display); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+.vl p { margin: 0; text-wrap: pretty; }
+.vl :focus-visible { outline: 3px solid var(--vl-violet-2); outline-offset: 3px; }
+.vl .wrap { width: min(100% - 2rem, var(--vl-max)); margin-inline: auto; }
+
+/* Botones */
+.vl .btn { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-height: 52px; padding: 0 1.4rem; border-radius: 999px; font-weight: 600; font-size: 1rem; border: 1.5px solid transparent; transition: transform .35s var(--vl-ease), background .2s, border-color .2s; }
+.vl .btn:hover { transform: translateY(-2px); }
+.vl .btn-wa { background: var(--vl-wa); color: var(--vl-wa-ink); }
+.vl .btn-wa:hover { background: oklch(78% 0.19 150); }
+.vl .btn-ghost { border-color: var(--vl-line); color: var(--vl-ink); background: transparent; }
+.vl .btn-ghost:hover { border-color: var(--vl-violet-2); }
+.vl .btn-ink { background: var(--vl-ink); color: var(--vl-bg); }
+.vl .btn svg { width: 20px; height: 20px; flex: none; }
+
+/* Nav */
+.vl-nav { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(10px); background: color-mix(in oklch, var(--vl-bg) 82%, transparent); border-bottom: 1px solid var(--vl-line); }
+.vl-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px; }
+.vl-nav img { height: 34px; width: auto; }
+.vl-nav nav { display: none; gap: 1.6rem; font-weight: 500; color: var(--vl-ink-2); }
+.vl-nav nav a:hover { color: var(--vl-ink); }
+.vl-nav .btn { min-height: 44px; padding-inline: 1.1rem; font-size: .95rem; }
+@media (min-width: 820px) { .vl-nav nav { display: flex; } }
+
+/* Hero */
+.vl-hero { padding: clamp(3rem, 8vw, 6.5rem) 0 0; position: relative; }
+.vl-hero .wrap { display: grid; gap: 2.5rem; }
+.vl-hero h1 { font-size: clamp(2.1rem, 6.2vw, 4.6rem); line-height: 1.02; max-width: 14ch; }
+.vl-hero h1 em { font-style: normal; color: var(--vl-violet-2); }
+.vl-hero .lede { font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--vl-ink-2); max-width: 46ch; margin-top: 1.4rem; }
+.vl-hero .ctas { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+.vl-hero .fine { margin-top: 1.2rem; color: var(--vl-muted); font-size: .95rem; }
+.vl-reveal { animation: vl-up .9s var(--vl-ease) both; }
+.vl-reveal:nth-child(2) { animation-delay: .08s; } .vl-reveal:nth-child(3) { animation-delay: .16s; } .vl-reveal:nth-child(4) { animation-delay: .24s; }
+@keyframes vl-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* Marquee de producto real */
+.vl-marquee { margin-top: clamp(2.5rem, 6vw, 4.5rem); overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.vl-marquee .track { display: flex; gap: 14px; width: max-content; animation: vl-scroll 60s linear infinite; }
+.vl-marquee:hover .track { animation-play-state: paused; }
+.vl-marquee figure { margin: 0; width: 168px; flex: none; }
+.vl-marquee .ph { aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: var(--vl-bg-2); border: 1px solid var(--vl-line); }
+.vl-marquee img { width: 100%; height: 100%; object-fit: cover; }
+.vl-marquee figcaption { font-size: .8rem; color: var(--vl-muted); margin-top: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes vl-scroll { to { transform: translateX(-50%); } }
+
+/* Banda violeta (drenched) */
+.vl-band { background: var(--vl-violet); color: var(--vl-violet-ink); padding: clamp(3.5rem, 8vw, 6.5rem) 0; margin-top: clamp(3rem, 7vw, 5.5rem); }
+.vl-band h2 { font-size: clamp(1.7rem, 5vw, 3.6rem); line-height: 1.04; color: var(--vl-violet-ink); max-width: 16ch; }
+.vl-band .grid { display: grid; gap: 2rem; margin-top: 2.5rem; }
+.vl-band .grid > div { border-top: 2px solid color-mix(in oklch, var(--vl-violet-ink) 35%, transparent); padding-top: 1rem; }
+.vl-band strong { display: block; font-family: var(--vl-display); font-size: 1.05rem; margin-bottom: .4rem; }
+.vl-band p { color: color-mix(in oklch, var(--vl-violet-ink) 85%, var(--vl-violet)); max-width: 34ch; }
+@media (min-width: 720px) { .vl-band .grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Secciones */
+.vl-sec { padding: clamp(3.5rem, 8vw, 6.5rem) 0; }
+.vl-sec h2 { font-size: clamp(1.6rem, 4.2vw, 2.9rem); line-height: 1.08; }
+.vl-sec .sub { color: var(--vl-ink-2); max-width: 52ch; margin-top: 1rem; font-size: 1.05rem; }
+
+/* Líneas: lista con tira de fotos, no grid de cards */
+.vl-lines { margin-top: 2.5rem; border-top: 1px solid var(--vl-line); }
+.vl-line { display: grid; gap: 1rem; padding: 1.6rem 0; border-bottom: 1px solid var(--vl-line); align-items: center; transition: background .2s; }
+.vl-line:hover { background: color-mix(in oklch, var(--vl-bg-2) 70%, transparent); }
+.vl-line .name { font-family: var(--vl-display); font-size: clamp(1.15rem, 2.4vw, 1.6rem); font-weight: 700; }
+.vl-line .count { color: var(--vl-muted); font-size: .95rem; margin-top: .2rem; }
+.vl-line .strip { display: flex; gap: 8px; }
+.vl-line .strip span { width: clamp(58px, 9vw, 92px); aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: var(--vl-bg-2); border: 1px solid var(--vl-line); flex: none; }
+.vl-line .strip img { width: 100%; height: 100%; object-fit: cover; }
+.vl-line .go { color: var(--vl-violet-2); font-weight: 600; white-space: nowrap; }
+@media (min-width: 720px) { .vl-line { grid-template-columns: 1.2fr 2fr auto; gap: 2rem; } }
+
+/* Dos modalidades */
+.vl-modes { display: grid; gap: 1.2rem; margin-top: 2.5rem; }
+.vl-mode { border: 1px solid var(--vl-line); border-radius: 22px; padding: clamp(1.4rem, 3vw, 2.2rem); background: var(--vl-bg-2); }
+.vl-mode.alt { background: transparent; }
+.vl-mode h3 { font-size: clamp(1.3rem, 2.6vw, 1.8rem); }
+.vl-mode .who { color: var(--vl-violet-2); font-weight: 600; margin-top: .3rem; }
+.vl-mode ol { margin: 1.4rem 0 0; padding: 0; list-style: none; display: grid; gap: .9rem; counter-reset: s; }
+.vl-mode li { display: grid; grid-template-columns: 32px 1fr; gap: .8rem; align-items: start; color: var(--vl-ink-2); }
+.vl-mode li::before { counter-increment: s; content: counter(s); width: 32px; height: 32px; border-radius: 50%; background: var(--vl-violet); color: var(--vl-violet-ink); font-family: var(--vl-display); font-weight: 700; font-size: .85rem; display: grid; place-items: center; }
+.vl-mode li b { color: var(--vl-ink); }
+@media (min-width: 820px) { .vl-modes { grid-template-columns: 1fr 1fr; } }
+
+/* Tabla vs importar */
+.vl-table { margin-top: 2.5rem; border: 1px solid var(--vl-line); border-radius: 22px; overflow: hidden; }
+.vl-table table { width: 100%; border-collapse: collapse; }
+.vl-table th, .vl-table td { padding: 1rem 1.1rem; text-align: left; border-bottom: 1px solid var(--vl-line); vertical-align: top; }
+.vl-table th { font-family: var(--vl-display); font-size: .9rem; font-weight: 700; background: var(--vl-bg-2); }
+.vl-table th:last-child { color: var(--vl-violet-2); }
+.vl-table td:first-child { color: var(--vl-muted); width: 28%; }
+.vl-table td:last-child { color: var(--vl-ink); font-weight: 500; }
+.vl-table tr:last-child td { border-bottom: 0; }
+@media (max-width: 560px) { .vl-table th, .vl-table td { padding: .8rem .7rem; font-size: .92rem; } }
+
+/* FAQ */
+.vl-faq { margin-top: 2.5rem; border-top: 1px solid var(--vl-line); }
+.vl-faq details { border-bottom: 1px solid var(--vl-line); }
+.vl-faq summary { cursor: pointer; list-style: none; padding: 1.2rem 0; font-family: var(--vl-display); font-size: 1.05rem; display: flex; justify-content: space-between; gap: 1rem; }
+.vl-faq summary::-webkit-details-marker { display: none; }
+.vl-faq summary::after { content: '+'; color: var(--vl-violet-2); font-size: 1.4rem; line-height: 1; }
+.vl-faq details[open] summary::after { content: '–'; }
+.vl-faq p { color: var(--vl-ink-2); padding-bottom: 1.3rem; max-width: 62ch; }
+
+/* CTA final */
+.vl-cta { background: var(--vl-bg-2); border-top: 1px solid var(--vl-line); padding: clamp(3.5rem, 9vw, 7rem) 0; }
+.vl-cta .wrap { display: grid; gap: 1.6rem; justify-items: start; }
+.vl-cta h2 { font-size: clamp(1.9rem, 5.5vw, 4rem); line-height: 1.02; max-width: 14ch; }
+.vl-cta p { color: var(--vl-ink-2); max-width: 44ch; font-size: 1.1rem; }
+.vl-cta .ctas { display: flex; flex-wrap: wrap; gap: .8rem; }
+
+/* Footer */
+.vl-foot { padding: 2.2rem 0 3rem; color: var(--vl-muted); font-size: .92rem; }
+.vl-foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between; }
+.vl-foot img { height: 26px; width: auto; opacity: .8; }
+.vl-foot nav { display: flex; gap: 1.4rem; }
+.vl-foot a:hover { color: var(--vl-ink); }
+
+/* WhatsApp flotante en móvil */
+.vl-fab { position: fixed; right: 16px; bottom: 16px; z-index: 40; width: 58px; height: 58px; border-radius: 50%; background: var(--vl-wa); color: var(--vl-wa-ink); display: grid; place-items: center; box-shadow: 0 10px 30px oklch(0% 0 0 / .45); }
+.vl-fab svg { width: 28px; height: 28px; }
+@media (min-width: 820px) { .vl-fab { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-reveal { animation: none; }
+  .vl-marquee .track { animation: none; flex-wrap: wrap; width: auto; }
+  .vl .btn, .vl-line { transition: none; }
+}
