@@ -72,7 +72,7 @@ export default function Leads({ showToast, role, searchQuery }) {
                     <td style={tdStyle}>{l.sells}</td>
                     <td style={tdStyle}>{(l.channels || []).join(', ')}</td>
                     <td style={tdStyle}>{(l.lines || []).join(', ')}</td>
-                    <td style={tdStyle}>{l.mode}{l.wants_landing ? ' · 🌐' : ''}</td>
+                    <td style={tdStyle}>{l.mode}</td>
                     <td style={tdStyle}>
                       <select disabled={!canEdit(role)} value={l.lead_type || suggestType(l)} onChange={e => setField(l.id, { lead_type: e.target.value })}
                         style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 6px', fontSize: 12 }}>

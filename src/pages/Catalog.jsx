@@ -70,7 +70,7 @@ export default function Catalog() {
   };
 
   const whatsappOrder = (product, msg) => {
-    const text = msg || `Hola VeneLab, estoy interesado en:\n\n*${product.name}*\nPrecio: $${Number(product.price).toFixed(2)}\n\n¿Cuál es el mínimo de pedido y disponibilidad?`;
+    const text = msg || `Hola VeneLab, quiero precio al mayor de:\n\n*${product.name}*\n\n¿Cuál es el mínimo de pedido y disponibilidad?`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -79,7 +79,7 @@ export default function Catalog() {
     let text = `Hola VeneLab, quiero hacer un pedido al mayor:\n\n*${product.name}*`;
     if (pres.length > 0) {
       text += `\n\nPresentaciones disponibles:`;
-      pres.forEach(p => { text += `\n• ${p.name} (${p.amount}${p.unit}) - $${Number(p.sale_price).toFixed(2)}`; });
+      pres.forEach(p => { text += `\n• ${p.name} (${p.amount}${p.unit})`; });
     }
     text += `\n\n¿Cuál es el mínimo y tiempo de entrega?`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
@@ -219,11 +219,9 @@ export default function Catalog() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, marginTop: 4 }}>
                     <div>
-                      <div style={{ fontSize: 10, color: '#4F6289', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em', fontWeight: 600 }}>DESDE</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.03em', background: 'linear-gradient(135deg, #6C72FF, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        ${Number(product.price).toFixed(2)}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#4F6289' }}>por unidad al mayor</div>
+                      <div style={{ fontSize: 10, color: '#4F6289', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em', fontWeight: 600 }}>PRECIO AL MAYOR</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#A78BFA' }}>Consúltalo por WhatsApp</div>
+                      <div style={{ fontSize: 11, color: '#4F6289' }}>producción bajo pedido</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <button onClick={() => whatsappBulk(product)} style={{
@@ -298,12 +296,8 @@ export default function Catalog() {
                           <div style={{ fontSize: 12, color: '#4F6289', fontFamily: "'JetBrains Mono', monospace" }}>{p.amount}{p.unit} {p.sku && `· ${p.sku}`}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 20, fontWeight: 800, color: '#6C72FF' }}>${Number(p.sale_price).toFixed(2)}</div>
-                            <div style={{ fontSize: 10, color: '#4F6289' }}>por unidad</div>
-                          </div>
                           <button onClick={() => {
-                            const text = `Hola VeneLab, quiero pedir:\n\n*${p.name}* (${p.amount}${p.unit})\nPrecio: $${Number(p.sale_price).toFixed(2)}/ud\n\n¿Cuántas unidades tienen disponibles?`;
+                            const text = `Hola VeneLab, quiero precio al mayor de:\n\n*${p.name}* (${p.amount}${p.unit})\n\n¿Cuál es el mínimo y disponibilidad?`;
                             window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
                           }} style={{
                             padding: '10px 16px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff',

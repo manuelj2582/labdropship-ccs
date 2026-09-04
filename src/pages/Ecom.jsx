@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { leads } from '../lib/db';
 
 const WHATSAPP_NUMBER = '584246528973';
-const VENTIFLY_URL = 'https://ventifly.app/registro?code=ECOM26';
 const SOURCE = 'ecom2026';
 
 const SELLS = [
@@ -29,7 +28,7 @@ const S = {
 };
 
 export default function Ecom() {
-  const [form, setForm] = useState({ name: '', whatsapp: '', instagram: '', sells: '', channels: [], lines: [], mode: '', wants_landing: true });
+  const [form, setForm] = useState({ name: '', whatsapp: '', instagram: '', sells: '', channels: [], lines: [], mode: '' });
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -60,7 +59,7 @@ export default function Ecom() {
         whatsapp: phone.startsWith('58') ? `+${phone}` : `+58${phone.replace(/^0/, '')}`,
         instagram: form.instagram.trim().replace(/^@/, '') || null,
         sells: form.sells, channels: form.channels, lines: form.lines, mode: form.mode,
-        wants_landing: form.wants_landing, user_agent: navigator.userAgent.slice(0, 200),
+        user_agent: navigator.userAgent.slice(0, 200),
       });
       setDone(true);
       window.scrollTo(0, 0);
@@ -69,7 +68,7 @@ export default function Ecom() {
     } finally { setSending(false); }
   };
 
-  const waText = encodeURIComponent('Hola VeneLab, vengo de ECOM, quiero la lista de precios al mayor.');
+  const waText = encodeURIComponent('Hola VeneLab, vengo de ECOM y quiero información para vender sus productos.');
 
   return (
     <div style={S.page}>
@@ -87,15 +86,14 @@ export default function Ecom() {
           <div>
             <h1 style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.1, margin: '0 0 10px' }}>¡Listo, {form.name.split(' ')[0]}! 🎉</h1>
             <p style={{ color: '#8B9DC3', fontSize: 16, lineHeight: 1.5, margin: '0 0 24px' }}>Ya quedaste registrado. Ahora elige por dónde seguimos:</p>
-            <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`} style={S.btn('#25D366')}>① Recibir precios por WhatsApp</a>
+            <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`} style={S.btn('#25D366')}>① Hablar por WhatsApp</a>
             <a href="/catalogo" style={S.btn('rgba(108,114,255,0.15)', '#A78BFA')}>② Ver catálogo mayorista</a>
-            {form.wants_landing && <a href={VENTIFLY_URL} style={S.btn('linear-gradient(135deg,#6C72FF,#A78BFA)')}>③ Crear mi cuenta Ventifly · 3 landings gratis</a>}
-            <p style={{ color: '#4F6289', fontSize: 13, marginTop: 24, textAlign: 'center' }}>Precio especial del evento válido hasta el martes 30 de septiembre.</p>
+            <p style={{ color: '#4F6289', fontSize: 13, marginTop: 24, textAlign: 'center' }}>Oferta especial del evento válida hasta el martes 30 de septiembre.</p>
           </div>
         ) : (
           <form onSubmit={submit}>
-            <h1 style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.1, margin: '0 0 8px' }}>Precios al mayor<br /><span style={{ background: 'linear-gradient(135deg,#6C72FF,#A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>+ 3 landings gratis</span></h1>
-            <p style={{ color: '#8B9DC3', fontSize: 15, lineHeight: 1.5, margin: 0 }}>Producto fabricado en Caracas para vender online. 60 segundos y te llega todo al WhatsApp.</p>
+            <h1 style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.1, margin: '0 0 8px' }}>Producto hecho en Venezuela<br /><span style={{ background: 'linear-gradient(135deg,#6C72FF,#A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>para vender online</span></h1>
+            <p style={{ color: '#8B9DC3', fontSize: 15, lineHeight: 1.5, margin: 0 }}>Al mayor y dropshipping. 60 segundos y te contactamos por WhatsApp con la oferta del evento.</p>
 
             <label style={S.label}>Nombre</label>
             <input style={S.input} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} autoComplete="name" />
@@ -126,17 +124,13 @@ export default function Ecom() {
               {MODES.map(o => <button type="button" key={o.id} style={S.chip(form.mode === o.id)} onClick={() => setForm({ ...form, mode: o.id })}>{o.label}</button>)}
             </div>
 
-            <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginTop: 22 }}>
-              <input type="checkbox" checked={form.wants_landing} onChange={e => setForm({ ...form, wants_landing: e.target.checked })} style={{ width: 20, height: 20 }} />
-              Quiero mi landing de venta con 3 landings gratis (Ventifly)
-            </label>
 
             {error && <div style={{ background: 'rgba(255,90,101,0.12)', border: '1px solid #FF5A65', color: '#FF8B93', padding: 12, borderRadius: 10, marginTop: 16, fontSize: 14 }}>{error}</div>}
 
             <button type="submit" disabled={sending} style={{ ...S.btn('linear-gradient(135deg,#6C72FF,#A78BFA)'), marginTop: 22, opacity: sending ? 0.6 : 1 }}>
-              {sending ? 'Enviando…' : 'Quiero los precios →'}
+              {sending ? 'Enviando…' : 'Quiero información →'}
             </button>
-            <p style={{ color: '#4F6289', fontSize: 12, textAlign: 'center', marginTop: 14 }}>Solo usamos tus datos para enviarte precios y catálogo. Sin spam.</p>
+            <p style={{ color: '#4F6289', fontSize: 12, textAlign: 'center', marginTop: 14 }}>Solo usamos tus datos para contactarte. Sin spam.</p>
           </form>
         )}
       </div>
