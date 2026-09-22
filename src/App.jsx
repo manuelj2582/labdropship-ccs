@@ -109,6 +109,13 @@ function AppContent() {
 
   useEffect(() => { if (user) loadData(); }, [user, loadData]);
 
+  // Si el rol no puede ver la vista actual (hash manual, cambio de rol), volver al dashboard.
+  // Va aquí arriba a propósito: si queda debajo de los `return` condicionales, en el primer
+  // render (loading) no se registra y al segundo aparece un hook de más -> React desmonta todo.
+  useEffect(() => {
+    if (user && !canView(role, view)) setView('dashboard');
+  }, [user, role, view]);
+
   const formulasWithCosts = useMemo(() => {
     return data.formulas.map(f => {
       const cost = (f.ingredients || []).reduce((sum, ing) => {
@@ -129,9 +136,6 @@ function AppContent() {
   }
 
   if (!user) return <LoginPage />;
-
-  // Si el rol no puede ver la vista actual (hash manual, cambio de rol), volver al dashboard
-  useEffect(() => { if (!canView(role, view)) setView('dashboard'); }, [role, view]);
 
   const currentNav = NAV_ITEMS.find(n => n.id === view);
 
