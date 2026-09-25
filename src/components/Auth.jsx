@@ -23,9 +23,13 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes.
+    // Supabase emite TOKEN_REFRESHED / SIGNED_IN cada vez que la pestaña recupera el foco.
+    // Solo actualizamos `user` si cambió el usuario (id); si no, la misma referencia evita
+    // que App recargue todos los datos y desmonte la vista (pérdida de foco y "Cargando...").
     const { data: { subscription } } = auth.onAuthChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const next = session?.user ?? null;
+      setUser(prev => (prev?.id === next?.id ? prev : next));
       setLoading(false);
     });
 

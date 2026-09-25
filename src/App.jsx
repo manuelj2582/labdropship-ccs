@@ -88,9 +88,12 @@ function AppContent() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Solo la primera carga muestra la pantalla "Cargando datos..."; las siguientes
+  // (por ejemplo tras guardar) refrescan en silencio sin desmontar la vista actual.
+  const loadedOnce = React.useRef(false);
   const loadData = useCallback(async () => {
     try {
-      setDataLoading(true);
+      if (!loadedOnce.current) setDataLoading(true);
       const [rawMats, formulas, prods, salesData, supps, cls, logs, cats, pres] = await Promise.all([
         db.rawMaterials.getAll(), db.formulas.getAll(), db.products.getAll(),
         db.sales.getAll(), db.suppliers.getAll(), db.clients.getAll(), db.productionLog.getAll(),
@@ -104,10 +107,11 @@ function AppContent() {
     } catch (err) {
       console.error('Error loading:', err);
       showToast('Error cargando datos: ' + err.message, 'error');
-    } finally { setDataLoading(false); }
+    } finally { loadedOnce.current = true; setDataLoading(false); }
   }, [showToast]);
 
-  useEffect(() => { if (user) loadData(); }, [user, loadData]);
+  const userId = user?.id;
+  useEffect(() => { if (userId) loadData(); }, [userId, loadData]);
 
   // Si el rol no puede ver la vista actual (hash manual, cambio de rol), volver al dashboard.
   // Va aquí arriba a propósito: si queda debajo de los `return` condicionales, en el primer
